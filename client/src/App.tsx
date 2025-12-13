@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Upload from "@/pages/Upload";
 import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
+import ShortsPlayer from "@/pages/ShortsPlayer";
 
 function Router() {
   return (
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/upload" component={Upload} />
       <Route path="/profile" component={Profile} />
       <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/shorts/:id" component={ShortsPlayer} />
       <Route component={NotFound} />
     </Switch>
   );
