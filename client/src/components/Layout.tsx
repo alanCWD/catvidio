@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { Home, PlusCircle, Library, FolderHeart, Zap } from "lucide-react";
+import { Home, PlusCircle, Library, FolderHeart } from "lucide-react";
+import { ZoomiesLogo } from "@/components/Branding";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -24,11 +25,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         
         <Link href="/shorts/s1"> 
           <a className={`flex flex-col items-center gap-1 w-full py-1 ${location.includes("/shorts") ? "text-foreground" : "text-foreground"}`}>
-             {/* YouTube Shorts Icon Equivalent */}
+             {/* Zoomies Icon */}
             <div className="relative">
-               <Zap size={24} strokeWidth={location.includes("/shorts") ? 2.5 : 1.5} fill={location.includes("/shorts") ? "currentColor" : "none"} />
+               <ZoomiesLogo className="w-6 h-6" active={location.includes("/shorts")} />
             </div>
-            <span className="text-[10px] font-normal">Shorts</span>
+            <span className="text-[10px] font-normal">Zoomies</span>
           </a>
         </Link>
 
