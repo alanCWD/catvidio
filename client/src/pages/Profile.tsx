@@ -33,13 +33,15 @@ export default function Profile() {
               </Link>
             </div>
             
-            <button className="p-2 rounded-full hover:bg-secondary transition-colors">
-              <Settings size={20} className="text-muted-foreground" />
-            </button>
+            <Link href="/settings">
+              <button className="p-2 rounded-full hover:bg-secondary transition-colors">
+                <Settings size={20} className="text-muted-foreground" />
+              </button>
+            </Link>
           </div>
 
           <h1 className="text-2xl font-black mb-1">{MOCK_USER.username}</h1>
-          <p className="text-sm text-muted-foreground mb-6">Cat Enthusiast & Content Creator</p>
+          <p className="text-sm text-muted-foreground mb-6">{MOCK_USER.tagline}</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-primary/5 border border-primary/10 p-4 rounded-xl">

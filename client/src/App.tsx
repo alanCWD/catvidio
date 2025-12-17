@@ -10,6 +10,7 @@ import Profile from "@/pages/Profile";
 import Leaderboard from "@/pages/Leaderboard";
 import ShortsPlayer from "@/pages/ShortsPlayer";
 import CreateProfile from "@/pages/CreateProfile";
+import Settings from "@/pages/Settings";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/upload" component={Upload} />
       <Route path="/profile" component={Profile} />
       <Route path="/create-profile" component={CreateProfile} />
+      <Route path="/settings" component={Settings} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/shorts/:id" component={ShortsPlayer} />
       <Route component={NotFound} />
