@@ -67,13 +67,26 @@ export function SubscriptionsNavIcon({ className = "w-6 h-6", active = false }: 
   );
 }
 
-export function UploadNavIcon({ className = "w-6 h-6" }: { className?: string }) {
-  // Consistent 1.5px stroke
+export function UploadNavIcon({ className = "w-6 h-6", active = false }: { className?: string, active?: boolean }) {
+  // Compensate for larger size (w-9 vs w-6) by reducing stroke width from 1.5 to 1
+  // This ensures the visual stroke width matches the other icons when scaled up.
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8V16" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8 12H16" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      {active ? (
+        // Active: Filled Circle with cutout Plus
+        <>
+          <circle cx="12" cy="12" r="10" fill="currentColor" />
+          <path d="M12 8V16" stroke="var(--color-background)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8 12H16" stroke="var(--color-background)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      ) : (
+        // Inactive: Outline Circle with stroke Plus
+        <g fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8V16" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8 12H16" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      )}
     </svg>
   );
 }
