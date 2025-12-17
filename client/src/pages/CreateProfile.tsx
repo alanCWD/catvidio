@@ -3,8 +3,8 @@ import { Layout } from "@/components/Layout";
 import { ArrowLeft, Camera, Sparkles, Wand2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_USER } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
+import { createOrUpdateProfile } from "@/lib/api";
 
 const CAT_COLORS = [
   "#FF0055", // Hot Pink
@@ -21,7 +21,7 @@ export default function CreateProfile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [step, setStep] = useState<"upload" | "processing" | "result">("upload");
-  const [name, setName] = useState(MOCK_USER.username);
+  const [name, setName] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [detectedColor, setDetectedColor] = useState(CAT_COLORS[0]);
 
@@ -43,9 +43,18 @@ export default function CreateProfile() {
   };
 
   const handleSave = async () => {
+    if (!name.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for your cat.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Convert image to base64 if present
-      let avatarBase64 = null;
+      let avatarBase64: string | undefined = undefined;
       if (selectedImage) {
         const response = await fetch(selectedImage);
         const blob = await response.blob();
@@ -56,12 +65,16 @@ export default function CreateProfile() {
         });
       }
 
-      const { createOrUpdateProfile } = await import("@/lib/api");
-      await createOrUpdateProfile({
+      const profileData: { username: string; avatarColor: string; avatar?: string } = {
         username: name,
-        avatar: avatarBase64,
         avatarColor: detectedColor,
-      });
+      };
+      
+      if (avatarBase64) {
+        profileData.avatar = avatarBase64;
+      }
+
+      await createOrUpdateProfile(profileData);
 
       toast({
         title: "Profile Created!",
