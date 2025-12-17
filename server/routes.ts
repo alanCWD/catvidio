@@ -3,6 +3,33 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertVideoSchema, insertCommentSchema } from "@shared/schema";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import { processVideo, ensureDirectories } from "./videoProcessor";
+
+const uploadStorage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    await ensureDirectories();
+    cb(null, path.join(process.cwd(), 'uploads', 'raw'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: uploadStorage,
+  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-matroska'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only video files are allowed.'));
+    }
+  }
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -111,7 +138,7 @@ export async function registerRoutes(
     }
   });
 
-  // Create video
+  // Create video (legacy - YouTube ID method)
   app.post("/api/videos", async (req, res) => {
     try {
       const data = insertVideoSchema.parse(req.body);
@@ -122,6 +149,117 @@ export async function registerRoutes(
         return res.status(400).json({ error: error.errors });
       }
       res.status(500).json({ error: "Failed to create video" });
+    }
+  });
+
+  // Upload video file for processing
+  app.post("/api/videos/upload", upload.single('video'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No video file provided" });
+      }
+
+      const userId = 1; // Mock user ID
+      const title = req.body.title || "Untitled Video";
+      const description = req.body.description || "";
+      const type = req.body.type || "short";
+
+      // Create video record with pending status
+      const video = await storage.createVideo({
+        userId,
+        title,
+        description,
+        type,
+        status: "pending",
+        originalFilename: req.file.originalname,
+        rawFilePath: req.file.path,
+      });
+
+      // Start processing in background
+      (async () => {
+        try {
+          await storage.updateVideo(video.id, { status: "processing" });
+          
+          const { processedPath, thumbnail } = await processVideo(req.file!.path, video.id);
+          
+          // Update video with processed paths
+          await storage.updateVideo(video.id, {
+            status: "uploaded",
+            processedFilePath: processedPath,
+            thumbnail: `/api/videos/${video.id}/thumbnail`,
+          });
+          
+          console.log(`Video ${video.id} processed successfully`);
+        } catch (error: any) {
+          console.error(`Video ${video.id} processing failed:`, error);
+          await storage.updateVideo(video.id, {
+            status: "failed",
+            processingError: error.message || "Unknown processing error",
+          });
+        }
+      })();
+
+      res.json({ 
+        id: video.id, 
+        status: "pending",
+        message: "Video uploaded and queued for processing" 
+      });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      res.status(500).json({ error: error.message || "Failed to upload video" });
+    }
+  });
+
+  // Get video processing status
+  app.get("/api/videos/:id/status", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const video = await storage.getVideo(id);
+      
+      if (!video) {
+        return res.status(404).json({ error: "Video not found" });
+      }
+      
+      res.json({
+        id: video.id,
+        status: video.status,
+        error: video.processingError,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch video status" });
+    }
+  });
+
+  // Serve video thumbnail
+  app.get("/api/videos/:id/thumbnail", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const video = await storage.getVideo(id);
+      
+      if (!video || !video.processedFilePath) {
+        return res.status(404).json({ error: "Thumbnail not found" });
+      }
+      
+      const thumbnailPath = path.join(process.cwd(), 'uploads', 'processed', `thumb_${id}.jpg`);
+      res.sendFile(thumbnailPath);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch thumbnail" });
+    }
+  });
+
+  // Serve processed video
+  app.get("/api/videos/:id/stream", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const video = await storage.getVideo(id);
+      
+      if (!video || !video.processedFilePath) {
+        return res.status(404).json({ error: "Video not found" });
+      }
+      
+      res.sendFile(video.processedFilePath);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to stream video" });
     }
   });
 

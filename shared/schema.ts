@@ -28,7 +28,7 @@ export type User = typeof users.$inferSelect;
 export const videos = pgTable("videos", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  youtubeId: varchar("youtube_id", { length: 20 }).notNull(),
+  youtubeId: varchar("youtube_id", { length: 20 }),
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   type: varchar("type", { length: 10 }).notNull().default("video"), // 'video' or 'short'
@@ -36,6 +36,12 @@ export const videos = pgTable("videos", {
   views: integer("views").default(0),
   earnings: integer("earnings").default(0), // Stored in cents
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  // Video processing fields
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // pending, processing, uploaded, approved, failed
+  originalFilename: text("original_filename"),
+  rawFilePath: text("raw_file_path"),
+  processedFilePath: text("processed_file_path"),
+  processingError: text("processing_error"),
 });
 
 export const insertVideoSchema = createInsertSchema(videos).omit({

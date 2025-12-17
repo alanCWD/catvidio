@@ -20,6 +20,7 @@ export interface IStorage {
   getVideo(id: number): Promise<Video | undefined>;
   getVideosByUser(userId: number): Promise<Video[]>;
   createVideo(insertVideo: InsertVideo): Promise<Video>;
+  updateVideo(id: number, updates: Partial<Video>): Promise<Video>;
   getVideoWithStats(id: number): Promise<{
     video: Video;
     upvoteCount: number;
@@ -93,6 +94,15 @@ export class DatabaseStorage implements IStorage {
     const [video] = await db
       .insert(videos)
       .values(insertVideo)
+      .returning();
+    return video;
+  }
+
+  async updateVideo(id: number, updates: Partial<Video>): Promise<Video> {
+    const [video] = await db
+      .update(videos)
+      .set(updates)
+      .where(eq(videos.id, id))
       .returning();
     return video;
   }
