@@ -28,8 +28,9 @@ export async function registerRoutes(
     try {
       const data = insertUserSchema.parse(req.body);
       
-      // Check if user exists
-      const existingUser = await storage.getUserByUsername(data.username);
+      // For now, always update user ID 1 (mock session)
+      // In a real app, you'd get the user ID from the session
+      const existingUser = await storage.getUser(1);
       
       if (existingUser) {
         // Update existing user
@@ -44,6 +45,7 @@ export async function registerRoutes(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
+      console.error('Profile save error:', error);
       res.status(500).json({ error: "Failed to save profile" });
     }
   });
