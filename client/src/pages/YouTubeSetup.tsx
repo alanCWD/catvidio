@@ -118,7 +118,7 @@ export default function YouTubeSetup() {
               Generate Authorization URL
             </CardTitle>
             <CardDescription>
-              Click the button below to get a Google authorization link. You'll need to sign in with the YouTube account that owns the @catvidioapp channel.
+              Click the button below to get a Google authorization link. You'll need to sign in with <strong>catvid.io.app@gmail.com</strong> (the account that owns the @catvidioapp channel).
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
