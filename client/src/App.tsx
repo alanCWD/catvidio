@@ -11,6 +11,7 @@ import Leaderboard from "@/pages/Leaderboard";
 import ShortsPlayer from "@/pages/ShortsPlayer";
 import CreateProfile from "@/pages/CreateProfile";
 import Settings from "@/pages/Settings";
+import YouTubeSetup from "@/pages/YouTubeSetup";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/settings" component={Settings} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/shorts/:id" component={ShortsPlayer} />
+      <Route path="/admin/youtube-setup" component={YouTubeSetup} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -6,6 +6,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import { processAndUploadToYouTube, ensureDirectories, isYouTubeConfigured } from "./videoProcessor";
+import { youtubeUploader } from "./youtubeUploader";
 
 const uploadStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -412,6 +413,30 @@ export async function registerRoutes(
         ? "YouTube API is configured. Videos will be uploaded to YouTube."
         : "YouTube API not configured. Videos will be stored locally only."
     });
+  });
+
+  // Generate YouTube authorization URL
+  app.get("/api/youtube/auth-url", async (req, res) => {
+    try {
+      const authUrl = youtubeUploader.generateAuthUrl();
+      res.json({ authUrl });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to generate auth URL" });
+    }
+  });
+
+  // Exchange authorization code for refresh token
+  app.post("/api/youtube/exchange-code", async (req, res) => {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        return res.status(400).json({ error: "Authorization code is required" });
+      }
+      const result = await youtubeUploader.exchangeCodeForTokens(code);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to exchange code" });
+    }
   });
 
   return httpServer;
