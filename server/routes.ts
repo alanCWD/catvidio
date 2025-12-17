@@ -419,10 +419,27 @@ export async function registerRoutes(
   app.get("/api/youtube/auth-url", async (req, res) => {
     try {
       const authUrl = youtubeUploader.generateAuthUrl();
-      res.json({ authUrl });
+      const redirectUri = youtubeUploader.getRedirectUri();
+      res.json({ authUrl, redirectUri });
     } catch (error: any) {
       res.status(400).json({ error: error.message || "Failed to generate auth URL" });
     }
+  });
+
+  // OAuth callback - redirects to setup page with code
+  app.get("/api/youtube/callback", async (req, res) => {
+    const code = req.query.code as string;
+    const error = req.query.error as string;
+    
+    if (error) {
+      return res.redirect(`/admin/youtube-setup?error=${encodeURIComponent(error)}`);
+    }
+    
+    if (code) {
+      return res.redirect(`/admin/youtube-setup?code=${encodeURIComponent(code)}`);
+    }
+    
+    res.redirect('/admin/youtube-setup?error=No authorization code received');
   });
 
   // Exchange authorization code for refresh token

@@ -1,18 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink, Copy, Check, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function YouTubeSetup() {
   const [authUrl, setAuthUrl] = useState<string | null>(null);
-  const [authCode, setAuthCode] = useState("");
+  const [redirectUri, setRedirectUri] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<any>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const errorParam = params.get('error');
+    
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+      window.history.replaceState({}, '', '/admin/youtube-setup');
+    } else if (code) {
+      window.history.replaceState({}, '', '/admin/youtube-setup');
+      exchangeCode(code);
+    }
+  }, []);
+
+  const exchangeCode = async (code: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/youtube/exchange-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setRefreshToken(data.refreshToken);
+      }
+    } catch (err) {
+      setError("Failed to exchange authorization code");
+    }
+    setLoading(false);
+  };
 
   const checkStatus = async () => {
     try {
@@ -34,34 +68,10 @@ export default function YouTubeSetup() {
         setError(data.error);
       } else {
         setAuthUrl(data.authUrl);
+        setRedirectUri(data.redirectUri);
       }
     } catch (err) {
       setError("Failed to generate authorization URL");
-    }
-    setLoading(false);
-  };
-
-  const exchangeCode = async () => {
-    if (!authCode.trim()) {
-      setError("Please enter the authorization code");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/youtube/exchange-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: authCode.trim() })
-      });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setRefreshToken(data.refreshToken);
-      }
-    } catch (err) {
-      setError("Failed to exchange authorization code");
     }
     setLoading(false);
   };
@@ -144,30 +154,41 @@ export default function YouTubeSetup() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">3</span>
-              Enter Authorization Code
-            </CardTitle>
-            <CardDescription>
-              After authorizing, Google will display a code. Copy and paste it here.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste authorization code here..."
-                value={authCode}
-                onChange={(e) => setAuthCode(e.target.value)}
-                data-testid="input-auth-code"
-              />
-              <Button onClick={exchangeCode} disabled={loading || !authCode} data-testid="button-exchange-code">
-                {loading ? "Exchanging..." : "Get Token"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {redirectUri && (
+          <Card className="border-blue-500/50 bg-blue-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-600">
+                <AlertCircle className="w-5 h-5" />
+                Important: Add Redirect URI to Google Cloud Console
+              </CardTitle>
+              <CardDescription>
+                Before clicking the authorization link, you must add this redirect URI to your OAuth client in Google Cloud Console.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg font-mono text-sm break-all">
+                {redirectUri}
+              </div>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                <li>Go to Google Cloud Console → APIs & Services → Credentials</li>
+                <li>Click on your OAuth 2.0 Client ID</li>
+                <li>Under "Authorized redirect URIs", click "Add URI"</li>
+                <li>Paste the URI above and click Save</li>
+                <li>Wait a few minutes for changes to propagate</li>
+                <li>Then click the authorization link above</li>
+              </ol>
+            </CardContent>
+          </Card>
+        )}
+
+        {loading && !refreshToken && (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Exchanging authorization code for refresh token...</p>
+            </CardContent>
+          </Card>
+        )}
 
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 flex items-center gap-2">

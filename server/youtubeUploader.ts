@@ -9,6 +9,14 @@ const SCOPES = [
   'https://www.googleapis.com/auth/youtube'
 ];
 
+function getRedirectUri(): string {
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  if (devDomain) {
+    return `https://${devDomain}/api/youtube/callback`;
+  }
+  return 'http://localhost:5000/api/youtube/callback';
+}
+
 interface YouTubeCredentials {
   clientId: string;
   clientSecret: string;
@@ -54,7 +62,7 @@ class YouTubeUploader {
     this.oauth2Client = new OAuth2(
       clientId,
       clientSecret,
-      'urn:ietf:wg:oauth:2.0:oob' // Offline/no redirect for server apps
+      getRedirectUri()
     );
 
     this.oauth2Client.setCredentials({
@@ -154,17 +162,22 @@ class YouTubeUploader {
       throw new Error('YouTube client credentials not configured');
     }
 
+    const redirectUri = getRedirectUri();
     const tempClient = new OAuth2(
       process.env.YOUTUBE_CLIENT_ID,
       process.env.YOUTUBE_CLIENT_SECRET,
-      'urn:ietf:wg:oauth:2.0:oob'
+      redirectUri
     );
 
     return tempClient.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
-      prompt: 'consent' // Force consent to get refresh token
+      prompt: 'consent'
     });
+  }
+
+  getRedirectUri(): string {
+    return getRedirectUri();
   }
 
   async exchangeCodeForTokens(code: string): Promise<{ refreshToken: string }> {
@@ -172,10 +185,11 @@ class YouTubeUploader {
       throw new Error('YouTube client credentials not configured');
     }
 
+    const redirectUri = getRedirectUri();
     const tempClient = new OAuth2(
       process.env.YOUTUBE_CLIENT_ID,
       process.env.YOUTUBE_CLIENT_SECRET,
-      'urn:ietf:wg:oauth:2.0:oob'
+      redirectUri
     );
 
     const { tokens } = await tempClient.getToken(code);
