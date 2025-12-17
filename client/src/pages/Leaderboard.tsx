@@ -1,21 +1,44 @@
 import { Layout } from "@/components/Layout";
-import { MOCK_VIDEOS, MOCK_USER } from "@/lib/mock-data";
-import { Trophy, TrendingUp, DollarSign, Crown } from "lucide-react";
-import { useState } from "react";
+import { Trophy, DollarSign, Crown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { fetchTopVideos, fetchTopCreators } from "@/lib/api";
+import { formatEarnings } from "@/lib/format";
 
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState<"videos" | "creators">("videos");
+  const [topVideos, setTopVideos] = useState<any[]>([]);
+  const [topCreators, setTopCreators] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const sortedVideos = [...MOCK_VIDEOS].sort((a, b) => b.earnings - a.earnings);
-  
-  // Mock creators based on videos for now
-  const creators = [
-    { name: "PurrMaster", earnings: 420.69, avatar: "PurrMaster" },
-    { name: "GalaxyPurr", earnings: 142.50, avatar: "GalaxyPurr" },
-    { name: "TickleMonster", earnings: 156.00, avatar: "TickleMonster" },
-    { name: "PianoPaws", earnings: 89.00, avatar: "PianoPaws" },
-  ].sort((a, b) => b.earnings - a.earnings);
+  useEffect(() => {
+    Promise.all([
+      fetchTopVideos(10),
+      fetchTopCreators(10)
+    ])
+      .then(([videos, creators]) => {
+        setTopVideos(videos);
+        setTopCreators(creators);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch leaderboard:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading leaderboard...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -54,7 +77,7 @@ export default function Leaderboard() {
 
         <div className="space-y-4">
           {activeTab === "videos" ? (
-            sortedVideos.map((video, index) => (
+            topVideos.map((video, index) => (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -66,39 +89,39 @@ export default function Leaderboard() {
                   {index + 1}
                 </div>
                 <div className="w-16 h-16 rounded-lg bg-black overflow-hidden relative shrink-0">
-                  <img src={video.thumbnail} className="w-full h-full object-cover opacity-80" />
+                  <img src={video.thumbnail || `https://i.ytimg.com/vi/${video.youtubeId}/hqdefault.jpg`} className="w-full h-full object-cover opacity-80" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-sm truncate">{video.title}</h3>
-                  <p className="text-xs text-muted-foreground mb-1">{video.author}</p>
+                  <p className="text-xs text-muted-foreground mb-1">{video.author?.username || 'Unknown'}</p>
                   <div className="flex items-center gap-1 text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded-md w-fit">
                     <DollarSign size={10} strokeWidth={3} />
-                    ${video.earnings.toFixed(2)}
+                    {formatEarnings(video.earnings || 0)}
                   </div>
                 </div>
                 {index === 0 && <Crown size={24} className="text-yellow-500" fill="currentColor" />}
               </motion.div>
             ))
           ) : (
-            creators.map((creator, index) => (
+            topCreators.map((creator, index) => (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                key={creator.name}
+                key={creator.id}
                 className="bg-card border border-border p-4 rounded-xl flex items-center gap-4 shadow-sm"
               >
                 <div className="font-black text-lg text-muted-foreground/50 w-6 text-center">
                   {index + 1}
                 </div>
                 <div className="w-12 h-12 rounded-full bg-secondary overflow-hidden border border-border">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${creator.avatar}`} />
+                  <img src={creator.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${creator.username}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-base truncate">{creator.name}</h3>
+                  <h3 className="font-bold text-base truncate">{creator.username}</h3>
                   <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm">
                     <DollarSign size={12} strokeWidth={3} />
-                    ${creator.earnings.toFixed(2)}
+                    {formatEarnings(creator.totalEarnings || 0)}
                   </div>
                 </div>
                 {index === 0 && <Crown size={24} className="text-yellow-500" fill="currentColor" />}

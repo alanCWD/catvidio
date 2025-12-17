@@ -1,22 +1,49 @@
 import { useRoute, useLocation } from "wouter";
-import { MOCK_VIDEOS } from "@/lib/mock-data";
 import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layout } from "@/components/Layout";
+import { fetchVideos } from "@/lib/api";
+import { formatVideoForComponent } from "@/lib/format";
 
 export default function ShortsPlayer() {
   const [match, params] = useRoute("/shorts/:id");
   const [location, setLocation] = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [shorts, setShorts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchVideos()
+      .then(data => {
+        const formatted = data.map(formatVideoForComponent);
+        const shortVideos = formatted.filter(v => v.type === 'short');
+        setShorts(shortVideos);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch shorts:', err);
+        setLoading(false);
+      });
+  }, []);
 
   const initialVideoId = params?.id;
-  const shorts = MOCK_VIDEOS.filter(v => v.type === 'short');
   
   // Reorder shorts so the clicked one is first
   const sortedShorts = [
-    ...shorts.filter(s => s.id === initialVideoId),
-    ...shorts.filter(s => s.id !== initialVideoId)
+    ...shorts.filter(s => s.id.toString() === initialVideoId),
+    ...shorts.filter(s => s.id.toString() !== initialVideoId)
   ];
+
+  if (loading) {
+    return (
+      <div className="bg-black text-white h-screen w-full relative max-w-md mx-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white/70">Loading Zoomies...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleBack = () => {
     setLocation("/");

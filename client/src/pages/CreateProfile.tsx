@@ -42,18 +42,41 @@ export default function CreateProfile() {
     }
   };
 
-  const handleSave = () => {
-    // Update global mock user state (in a real app this would be an API call)
-    MOCK_USER.username = name;
-    if (selectedImage) MOCK_USER.avatar = selectedImage;
-    MOCK_USER.avatarColor = detectedColor;
+  const handleSave = async () => {
+    try {
+      // Convert image to base64 if present
+      let avatarBase64 = null;
+      if (selectedImage) {
+        const response = await fetch(selectedImage);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        avatarBase64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
 
-    toast({
-      title: "Profile Created!",
-      description: `Welcome to catvid.io, ${name}!`,
-    });
+      const { createOrUpdateProfile } = await import("@/lib/api");
+      await createOrUpdateProfile({
+        username: name,
+        avatar: avatarBase64,
+        avatarColor: detectedColor,
+      });
 
-    setLocation("/profile");
+      toast({
+        title: "Profile Created!",
+        description: `Welcome to catvid.io, ${name}!`,
+      });
+
+      setLocation("/profile");
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

@@ -1,87 +1,111 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
-import { UploadCloud, CheckCircle2, AlertCircle } from "lucide-react";
+import { UploadCloud, CheckCircle2, Youtube } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { createVideo, fetchCurrentUser } from "@/lib/api";
 
 export default function Upload() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadStep, setUploadStep] = useState<"select" | "details" | "processing" | "done">("select");
+  const [user, setUser] = useState<any>(null);
+  const [uploadStep, setUploadStep] = useState<"form" | "processing" | "done">("form");
   const [formData, setFormData] = useState({
+    youtubeId: "",
     title: "",
-    tags: "",
+    description: "",
+    type: "video" as "video" | "short",
   });
 
-  const handleFileSelect = () => {
-    // Mock file selection
-    setUploadStep("details");
-  };
+  useEffect(() => {
+    fetchCurrentUser().then(setUser).catch(console.error);
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please create a profile first",
+        variant: "destructive",
+      });
+      setLocation("/create-profile");
+      return;
+    }
+
     setUploadStep("processing");
     
-    // Simulate upload and processing
-    setTimeout(() => {
+    try {
+      await createVideo({
+        userId: user.id,
+        youtubeId: formData.youtubeId,
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        thumbnail: `https://i.ytimg.com/vi/${formData.youtubeId}/hqdefault.jpg`,
+      });
+
       setUploadStep("done");
       toast({
         title: "Video Submitted!",
-        description: "Your cat is now being reviewed by our team.",
+        description: "Your cat video is now live!",
       });
       setTimeout(() => {
         setLocation("/profile");
       }, 1500);
-    }, 2000);
+    } catch (error) {
+      console.error('Failed to create video:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit video. Please try again.",
+        variant: "destructive",
+      });
+      setUploadStep("form");
+    }
   };
 
   return (
     <Layout>
-      <div className="p-6 h-full flex flex-col">
+      <div className="p-6 h-full flex flex-col pb-24">
         <header className="mb-8">
-          <h1 className="text-3xl font-black mb-2">Upload</h1>
-          <p className="text-muted-foreground">Share your cat with the world and start earning.</p>
+          <h1 className="text-3xl font-black mb-2">Submit Video</h1>
+          <p className="text-muted-foreground">Submit a YouTube video ID to share your cat with the world.</p>
         </header>
 
-        <div className="flex-1 flex flex-col justify-center">
-          {uploadStep === "select" && (
-            <motion.div 
+        <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+          {uploadStep === "form" && (
+            <motion.form 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="border-2 border-dashed border-border rounded-3xl p-10 flex flex-col items-center justify-center text-center gap-4 bg-card/50 hover:bg-card/80 transition-colors cursor-pointer group"
-              onClick={handleFileSelect}
-            >
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <UploadCloud size={40} className="text-primary" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg">Select Video</h3>
-                <p className="text-sm text-muted-foreground mt-1">MP4 or MOV up to 100MB</p>
-              </div>
-            </motion.div>
-          )}
-
-          {uploadStep === "details" && (
-            <motion.form 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
               onSubmit={handleSubmit}
             >
-              <div className="bg-secondary/30 p-4 rounded-xl flex items-center gap-3">
-                 <div className="w-12 h-12 bg-black rounded-lg shrink-0" />
-                 <div className="text-sm">
-                   <p className="font-bold">cute_cat_jumping.mp4</p>
-                   <p className="text-muted-foreground">12.5 MB • Ready</p>
-                 </div>
+              <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-start gap-3">
+                <Youtube size={24} className="text-primary mt-0.5 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-bold text-foreground">YouTube Video ID</p>
+                  <p className="text-muted-foreground">Paste the ID from a YouTube URL (e.g., dQw4w9WgXcQ from youtube.com/watch?v=dQw4w9WgXcQ)</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold ml-1">YouTube Video ID</label>
+                <input 
+                  required
+                  data-testid="input-youtube-id"
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
+                  placeholder="dQw4w9WgXcQ"
+                  value={formData.youtubeId}
+                  onChange={e => setFormData({...formData, youtubeId: e.target.value})}
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-bold ml-1">Title</label>
                 <input 
                   required
+                  data-testid="input-title"
                   className="w-full bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   placeholder="e.g. My cat did a backflip!"
                   value={formData.title}
@@ -90,24 +114,57 @@ export default function Upload() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold ml-1">Tags (comma separated)</label>
-                <input 
-                  className="w-full bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="#funny, #jump, #fail"
-                  value={formData.tags}
-                  onChange={e => setFormData({...formData, tags: e.target.value})}
+                <label className="text-sm font-bold ml-1">Description (optional)</label>
+                <textarea 
+                  data-testid="input-description"
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  placeholder="Tell us about this cat video..."
+                  rows={3}
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold ml-1">Type</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    data-testid="button-type-video"
+                    onClick={() => setFormData({...formData, type: "video"})}
+                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${
+                      formData.type === "video" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary text-foreground hover:bg-secondary/80"
+                    }`}
+                  >
+                    Regular Video
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="button-type-short"
+                    onClick={() => setFormData({...formData, type: "short"})}
+                    className={`flex-1 py-3 rounded-xl font-bold transition-all ${
+                      formData.type === "short" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary text-foreground hover:bg-secondary/80"
+                    }`}
+                  >
+                    Zoomies (Short)
+                  </button>
+                </div>
               </div>
 
               <div className="pt-4">
                 <button 
                   type="submit"
+                  data-testid="button-submit"
                   className="w-full bg-primary text-primary-foreground font-bold text-lg py-4 rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-[0.98]"
                 >
-                  Publish Video
+                  Submit Video
                 </button>
                 <p className="text-xs text-center text-muted-foreground mt-4 px-4">
-                  By publishing, you agree to our Terms of Service and grant PurrStream distribution rights.
+                  By submitting, you agree to our Terms of Service. The video will be embedded from YouTube.
                 </p>
               </div>
             </motion.form>

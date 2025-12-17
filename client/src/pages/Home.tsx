@@ -1,17 +1,48 @@
 import { Layout } from "@/components/Layout";
 import { WideVideoCard } from "@/components/WideVideoCard";
 import { ShortsShelf } from "@/components/ShortsShelf";
-import { MOCK_VIDEOS } from "@/lib/mock-data";
 import { Search, Bell, Cast } from "lucide-react";
 import { Logo } from "@/components/Branding";
+import { useState, useEffect } from "react";
+import { fetchVideos } from "@/lib/api";
+import { formatVideoForComponent } from "@/lib/format";
 
 export default function Home() {
-  const wideVideos = MOCK_VIDEOS.filter(v => v.type === 'video');
-  const shorts = MOCK_VIDEOS.filter(v => v.type === 'short');
+  const [videos, setVideos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchVideos()
+      .then(data => {
+        const formatted = data.map(formatVideoForComponent);
+        setVideos(formatted);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch videos:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const wideVideos = videos.filter(v => v.type === 'video');
+  const shorts = videos.filter(v => v.type === 'short');
 
   // Logic: First wide video -> Shorts Shelf -> Remaining wide videos
   const firstVideo = wideVideos[0];
   const remainingVideos = wideVideos.slice(1);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="bg-background min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading cat videos...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
