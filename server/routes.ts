@@ -163,6 +163,7 @@ export async function registerRoutes(
       const title = req.body.title || "Untitled Video";
       const description = req.body.description || "";
       const type = req.body.type || "short";
+      const originalAudioOnly = req.body.originalAudioOnly === "true";
 
       // Create video record with pending status
       const video = await storage.createVideo({
@@ -173,6 +174,7 @@ export async function registerRoutes(
         status: "pending",
         originalFilename: req.file.originalname,
         rawFilePath: req.file.path,
+        originalAudioOnly,
       });
 
       // Start processing in background

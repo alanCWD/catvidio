@@ -24,6 +24,7 @@ export default function Upload() {
     title: "",
     description: "",
     type: "short" as "video" | "short",
+    originalAudioOnly: true,
   });
 
   useEffect(() => {
@@ -78,6 +79,7 @@ export default function Upload() {
         formData.title,
         formData.description,
         formData.type,
+        formData.originalAudioOnly,
         (progress) => setUploadProgress(progress)
       );
 
@@ -155,7 +157,7 @@ export default function Upload() {
     setSelectedFile(null);
     setErrorMessage("");
     setUploadProgress(0);
-    setFormData({ youtubeId: "", title: "", description: "", type: "short" });
+    setFormData({ youtubeId: "", title: "", description: "", type: "short", originalAudioOnly: true });
   };
 
   return (
@@ -246,6 +248,24 @@ export default function Upload() {
                         A 3-second catvid.io intro and outro will be added to your video automatically.
                       </p>
                     </div>
+
+                    <label 
+                      className="flex items-start gap-3 p-4 bg-card border border-border rounded-xl cursor-pointer hover:border-primary/50 transition-all"
+                      data-testid="checkbox-original-audio"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.originalAudioOnly}
+                        onChange={(e) => setFormData({...formData, originalAudioOnly: e.target.checked})}
+                        className="mt-0.5 w-5 h-5 rounded border-border text-primary focus:ring-primary/20 accent-primary"
+                      />
+                      <div className="flex-1">
+                        <p className="font-bold text-sm">Original Audio Only</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          I confirm this video contains only original audio. No copyrighted music, background tracks, or third-party audio has been added.
+                        </p>
+                      </div>
+                    </label>
                   </>
                 ) : (
                   <>

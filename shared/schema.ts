@@ -42,6 +42,8 @@ export const videos = pgTable("videos", {
   rawFilePath: text("raw_file_path"),
   processedFilePath: text("processed_file_path"),
   processingError: text("processing_error"),
+  // Audio policy
+  originalAudioOnly: boolean("original_audio_only").notNull().default(true),
 });
 
 export const insertVideoSchema = createInsertSchema(videos).omit({

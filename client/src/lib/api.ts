@@ -104,6 +104,7 @@ export async function uploadVideoFile(
   title: string,
   description: string,
   type: 'video' | 'short',
+  originalAudioOnly: boolean,
   onProgress?: (progress: number) => void
 ): Promise<{ id: number; status: string; message: string }> {
   return new Promise((resolve, reject) => {
@@ -112,6 +113,7 @@ export async function uploadVideoFile(
     formData.append('title', title);
     formData.append('description', description);
     formData.append('type', type);
+    formData.append('originalAudioOnly', originalAudioOnly.toString());
 
     const xhr = new XMLHttpRequest();
     
