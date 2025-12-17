@@ -5,7 +5,7 @@ import { insertUserSchema, insertVideoSchema, insertCommentSchema } from "@share
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
-import { processVideo, ensureDirectories } from "./videoProcessor";
+import { processAndUploadToYouTube, ensureDirectories, isYouTubeConfigured } from "./videoProcessor";
 
 const uploadStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -180,16 +180,24 @@ export async function registerRoutes(
         try {
           await storage.updateVideo(video.id, { status: "processing" });
           
-          const { processedPath, thumbnail } = await processVideo(req.file!.path, video.id);
+          const result = await processAndUploadToYouTube(
+            req.file!.path,
+            video.id,
+            title,
+            description
+          );
           
-          // Update video with processed paths
+          // Update video with processed paths and YouTube ID
           await storage.updateVideo(video.id, {
             status: "uploaded",
-            processedFilePath: processedPath,
-            thumbnail: `/api/videos/${video.id}/thumbnail`,
+            processedFilePath: result.processedPath,
+            thumbnail: result.youtubeId 
+              ? result.thumbnail 
+              : `/api/videos/${video.id}/thumbnail`,
+            youtubeId: result.youtubeId || undefined,
           });
           
-          console.log(`Video ${video.id} processed successfully`);
+          console.log(`Video ${video.id} processed successfully${result.youtubeId ? ` (YouTube: ${result.youtubeId})` : ''}`);
         } catch (error: any) {
           console.error(`Video ${video.id} processing failed:`, error);
           await storage.updateVideo(video.id, {
@@ -385,6 +393,18 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch top creators" });
     }
+  });
+
+  // ========== YOUTUBE CONFIG ROUTES ==========
+  
+  // Check YouTube configuration status
+  app.get("/api/youtube/status", async (req, res) => {
+    res.json({ 
+      configured: isYouTubeConfigured(),
+      message: isYouTubeConfigured() 
+        ? "YouTube API is configured. Videos will be uploaded to YouTube."
+        : "YouTube API not configured. Videos will be stored locally only."
+    });
   });
 
   return httpServer;

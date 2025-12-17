@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
+import { youtubeUploader } from './youtubeUploader';
 
 const execAsync = promisify(exec);
 
@@ -82,4 +83,46 @@ export async function cleanupFile(filePath: string): Promise<void> {
     await fs.unlink(filePath);
   } catch (error) {
   }
+}
+
+export async function processAndUploadToYouTube(
+  rawFilePath: string,
+  videoId: number,
+  title: string,
+  description: string
+): Promise<{ youtubeId: string; thumbnail: string; processedPath: string }> {
+  // First process the video (add branding)
+  const { processedPath, thumbnail } = await processVideo(rawFilePath, videoId);
+
+  // If YouTube is configured, upload to YouTube
+  if (youtubeUploader.isReady()) {
+    console.log(`Uploading video ${videoId} to YouTube...`);
+    
+    const result = await youtubeUploader.uploadVideo({
+      filePath: processedPath,
+      title,
+      description,
+      privacyStatus: 'private', // Upload as private, to be approved later
+      onProgress: (progress) => {
+        console.log(`YouTube upload progress for video ${videoId}: ${progress}%`);
+      }
+    });
+
+    return {
+      youtubeId: result.youtubeId,
+      thumbnail: result.thumbnail,
+      processedPath
+    };
+  }
+
+  // YouTube not configured, return local processed video
+  return {
+    youtubeId: '',
+    thumbnail,
+    processedPath
+  };
+}
+
+export function isYouTubeConfigured(): boolean {
+  return youtubeUploader.isReady();
 }
