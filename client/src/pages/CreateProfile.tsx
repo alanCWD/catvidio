@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Layout } from "@/components/Layout";
-import { ArrowLeft, Camera, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, Camera, Sparkles, Wand2, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { createOrUpdateProfile } from "@/lib/api";
+import { createOrUpdateProfile, fetchCurrentUser } from "@/lib/api";
 
 const CAT_COLORS = [
   "#FF0055", // Hot Pink
@@ -24,6 +24,15 @@ export default function CreateProfile() {
   const [name, setName] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [detectedColor, setDetectedColor] = useState(CAT_COLORS[0]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    fetchCurrentUser().then((user) => {
+      if (user?.username) {
+        setName(user.username);
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -52,6 +61,8 @@ export default function CreateProfile() {
       return;
     }
 
+    setIsSaving(true);
+    
     try {
       // Convert image to base64 if present
       let avatarBase64: string | undefined = undefined;
@@ -66,7 +77,7 @@ export default function CreateProfile() {
       }
 
       const profileData: { username: string; avatarColor: string; avatar?: string } = {
-        username: name,
+        username: name.trim(),
         avatarColor: detectedColor,
       };
       
@@ -89,6 +100,8 @@ export default function CreateProfile() {
         description: "Failed to save profile. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -215,10 +228,21 @@ export default function CreateProfile() {
 
                 <button 
                   onClick={handleSave}
-                  className="w-full bg-primary text-primary-foreground font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
+                  disabled={isSaving || !name.trim()}
+                  className="w-full bg-primary text-primary-foreground font-bold text-lg py-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save Profile
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Profile"
+                  )}
                 </button>
+                {!name.trim() && (
+                  <p className="text-center text-sm text-destructive">Please enter a name for your cat above.</p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
