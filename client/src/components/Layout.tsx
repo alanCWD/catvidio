@@ -1,9 +1,16 @@
 import { Link, useLocation } from "wouter";
 import { ZoomiesLogo, HomeNavIcon, SubscriptionsNavIcon, UploadNavIcon } from "@/components/Branding";
-import { MOCK_USER } from "@/lib/mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCurrentUser } from "@/lib/api";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  
+  const { data: user } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: fetchCurrentUser,
+    staleTime: 30000,
+  });
 
   const isActive = (path: string) => location === path;
 
@@ -50,8 +57,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Link href="/profile">
           <a className={`flex flex-col items-center gap-1 w-full py-1 ${isActive("/profile") ? "text-foreground" : "text-foreground"}`}>
             <div className={`w-6 h-6 rounded-full overflow-hidden border ${isActive("/profile") ? "border-foreground" : "border-transparent"}`} style={{ padding: '1px' }}>
-               <div className="w-full h-full rounded-full overflow-hidden" style={{ backgroundColor: MOCK_USER.avatarColor }}>
-                  <img src={MOCK_USER.avatar} alt="You" className="w-full h-full object-cover" />
+               <div className="w-full h-full rounded-full overflow-hidden" style={{ backgroundColor: user?.avatarColor || "#FF0055" }}>
+                  <img src={user?.avatar || "/api/placeholder-cat.jpg"} alt="You" className="w-full h-full object-cover" />
                </div>
             </div>
             <span className="text-[10px] font-normal">You</span>
