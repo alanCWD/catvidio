@@ -148,7 +148,9 @@ export const MOCK_COMMENTS: Comment[] = [
 
 export const MOCK_USER = {
   id: "user_555",
-  username: "PurrMaster",
+  username: "Katy Purrie",
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Katy%20Purrie", // Default fallback
+  avatarColor: "magenta", // Fallback color
   walletBalance: 420.69,
   totalViews: 154200,
   videos: ["1", "3"] 

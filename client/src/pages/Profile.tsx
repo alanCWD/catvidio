@@ -1,6 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { MOCK_USER, MOCK_VIDEOS } from "@/lib/mock-data";
-import { Settings, Wallet, TrendingUp, PlayCircle, DollarSign } from "lucide-react";
+import { Settings, Wallet, TrendingUp, PlayCircle, DollarSign, Edit2 } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Profile() {
   const userVideos = MOCK_VIDEOS.filter(v => MOCK_USER.videos.includes(v.id));
@@ -11,11 +12,27 @@ export default function Profile() {
         {/* Header Profile Section */}
         <div className="bg-card border-b border-border/50 p-6">
           <div className="flex justify-between items-start mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-orange-400 p-1">
-              <div className="w-full h-full bg-card rounded-xl flex items-center justify-center overflow-hidden">
-                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${MOCK_USER.username}`} alt="avatar" />
+            <div className="relative">
+               {/* Avatar Container with Dynamic Border Color */}
+              <div 
+                className="w-24 h-24 rounded-full p-1"
+                style={{ backgroundColor: MOCK_USER.avatarColor }}
+              >
+                <div className="w-full h-full bg-card rounded-full overflow-hidden border-4 border-white">
+                  <img 
+                    src={MOCK_USER.avatar} 
+                    alt="avatar" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
+              <Link href="/create-profile">
+                <button className="absolute -bottom-1 -right-1 bg-foreground text-background p-2 rounded-full shadow-lg hover:scale-105 transition-transform">
+                  <Edit2 size={14} />
+                </button>
+              </Link>
             </div>
+            
             <button className="p-2 rounded-full hover:bg-secondary transition-colors">
               <Settings size={20} className="text-muted-foreground" />
             </button>
