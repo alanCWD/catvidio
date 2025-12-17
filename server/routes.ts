@@ -111,7 +111,12 @@ export async function registerRoutes(
             ...video,
             upvoteCount,
             commentCount: comments.length,
-            author: author?.username || "Unknown",
+            author: author ? {
+              id: author.id,
+              username: author.username,
+              avatar: author.avatar,
+              avatarColor: author.avatarColor,
+            } : { username: "Unknown" },
           };
         })
       );

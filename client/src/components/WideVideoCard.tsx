@@ -26,12 +26,25 @@ export function WideVideoCard({ video }: WideVideoCardProps) {
       {/* Meta Data */}
       <div className="px-3 py-3 flex gap-3">
         {/* Author Avatar */}
-        <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden shrink-0 mt-1">
-          <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${video.author}`} 
-            alt="avatar" 
-            className="w-full h-full object-cover"
-          />
+        <div 
+          className="w-10 h-10 rounded-full shrink-0 mt-1 overflow-hidden border-2 flex-shrink-0"
+          style={{ 
+            borderColor: typeof video.author === 'object' && video.author.avatarColor ? video.author.avatarColor : '#FF0055'
+          }}
+        >
+          {typeof video.author === 'object' && video.author.avatar ? (
+            <img 
+              src={video.author.avatar} 
+              alt="avatar" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <img 
+              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof video.author === 'object' ? video.author.username : video.author}`} 
+              alt="avatar" 
+              className="w-full h-full object-cover bg-secondary"
+            />
+          )}
         </div>
 
         {/* Info Column */}
@@ -46,7 +59,7 @@ export function WideVideoCard({ video }: WideVideoCardProps) {
           </div>
           
           <div className="flex items-center gap-1 text-[12px] text-muted-foreground">
-            <span>{video.author}</span>
+            <span>{typeof video.author === 'object' ? video.author.username : video.author}</span>
             <span>•</span>
             <span>{video.views}</span>
             <span>•</span>
