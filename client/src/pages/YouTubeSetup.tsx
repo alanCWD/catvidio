@@ -86,7 +86,7 @@ export default function YouTubeSetup() {
 
   return (
     <Layout>
-      <div className="p-4 max-w-2xl mx-auto space-y-6">
+      <div className="p-4 max-w-2xl mx-auto space-y-6 pb-24">
         <h1 className="text-2xl font-bold">YouTube API Setup</h1>
         <p className="text-muted-foreground">
           Follow these steps to connect catvid.io to your YouTube channel for automatic video uploads.
