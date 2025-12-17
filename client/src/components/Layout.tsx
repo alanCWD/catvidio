@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { Home, PlusCircle, Library, FolderHeart } from "lucide-react";
+import { Home, PlusCircle, FolderHeart } from "lucide-react";
 import { ZoomiesLogo } from "@/components/Branding";
+import { MOCK_USER } from "@/lib/mock-data";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -48,8 +49,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <Link href="/profile">
           <a className={`flex flex-col items-center gap-1 w-full py-1 ${isActive("/profile") ? "text-foreground" : "text-foreground"}`}>
-            <Library size={24} strokeWidth={isActive("/profile") ? 2.5 : 1.5} fill={isActive("/profile") ? "currentColor" : "none"} />
-            <span className="text-[10px] font-normal">Library</span>
+            <div className={`w-6 h-6 rounded-full overflow-hidden border ${isActive("/profile") ? "border-foreground" : "border-transparent"}`} style={{ padding: '1px' }}>
+               <div className="w-full h-full rounded-full overflow-hidden" style={{ backgroundColor: MOCK_USER.avatarColor }}>
+                  <img src={MOCK_USER.avatar} alt="You" className="w-full h-full object-cover" />
+               </div>
+            </div>
+            <span className="text-[10px] font-normal">You</span>
           </a>
         </Link>
       </nav>
