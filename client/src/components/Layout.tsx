@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, PlusCircle, FolderHeart } from "lucide-react";
-import { ZoomiesLogo } from "@/components/Branding";
+import { ZoomiesLogo, HomeNavIcon, SubscriptionsNavIcon, UploadNavIcon } from "@/components/Branding";
 import { MOCK_USER } from "@/lib/mock-data";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -19,7 +18,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-background border-t border-border/20 px-2 py-1 flex justify-between items-center z-50 h-[56px]">
         <Link href="/">
           <a className={`flex flex-col items-center gap-1 w-full py-1 ${isActive("/") ? "text-foreground" : "text-foreground"}`}>
-            <Home size={24} strokeWidth={isActive("/") ? 2.5 : 1.5} fill={isActive("/") ? "currentColor" : "none"} />
+            <HomeNavIcon className="w-6 h-6" active={isActive("/")} />
             <span className="text-[10px] font-normal">Home</span>
           </a>
         </Link>
@@ -36,13 +35,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <Link href="/upload">
           <a className="flex flex-col items-center justify-center w-full">
-            <PlusCircle size={38} strokeWidth={1} className="text-foreground" />
+            <UploadNavIcon className="w-9 h-9 text-foreground" />
           </a>
         </Link>
 
         <Link href="/leaderboard">
           <a className={`flex flex-col items-center gap-1 w-full py-1 ${isActive("/leaderboard") ? "text-foreground" : "text-foreground"}`}>
-            <FolderHeart size={24} strokeWidth={isActive("/leaderboard") ? 2.5 : 1.5} fill={isActive("/leaderboard") ? "currentColor" : "none"} />
+            <SubscriptionsNavIcon className="w-6 h-6" active={isActive("/leaderboard")} />
             <span className="text-[10px] font-normal">Subscriptions</span>
           </a>
         </Link>
