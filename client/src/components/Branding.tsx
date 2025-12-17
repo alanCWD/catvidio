@@ -19,7 +19,7 @@ export function ZoomiesLogo({ className = "w-6 h-6", active = false }: { classNa
        <path 
          d="M16 3L5 14H13L11 21L20 9H12L16 3Z" 
          fill={active ? "currentColor" : "none"}
-         stroke="currentColor"
+         stroke={active ? "none" : "currentColor"}
          strokeWidth={active ? "0" : "1.5"}
          strokeLinejoin="round"
        />
@@ -68,8 +68,6 @@ export function SubscriptionsNavIcon({ className = "w-6 h-6", active = false }: 
 }
 
 export function UploadNavIcon({ className = "w-6 h-6", active = false }: { className?: string, active?: boolean }) {
-  // Compensate for larger size (w-9 vs w-6) by reducing stroke width from 1.5 to 1
-  // This ensures the visual stroke width matches the other icons when scaled up.
   return (
     <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
       {active ? (
@@ -81,7 +79,7 @@ export function UploadNavIcon({ className = "w-6 h-6", active = false }: { class
         </>
       ) : (
         // Inactive: Outline Circle with stroke Plus
-        <g fill="none" stroke="currentColor" strokeWidth="1">
+        <g fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="12" cy="12" r="10" />
           <path d="M12 8V16" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M8 12H16" strokeLinecap="round" strokeLinejoin="round" />

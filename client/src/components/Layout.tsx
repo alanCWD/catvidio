@@ -34,8 +34,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Link>
 
         <Link href="/upload">
-          <a className="flex flex-col items-center justify-center w-full">
-            <UploadNavIcon className="w-9 h-9 text-foreground" active={isActive("/upload")} />
+          <a className="flex flex-col items-center justify-center w-full py-1">
+            <UploadNavIcon className="w-6 h-6 text-foreground" active={isActive("/upload")} />
+            <span className="text-[10px] font-normal">Create</span>
           </a>
         </Link>
 
