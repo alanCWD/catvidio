@@ -45,10 +45,10 @@ export function VideoCard({ video }: VideoCardProps) {
       <div className="p-4 flex items-center justify-between bg-card z-10 relative">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-secondary/50 overflow-hidden border border-border">
-             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${video.author}`} alt="avatar" />
+             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof video.author === 'object' ? video.author.username : video.author}`} alt="avatar" />
           </div>
           <div>
-            <h3 className="font-bold text-sm leading-tight">{video.author}</h3>
+            <h3 className="font-bold text-sm leading-tight">{typeof video.author === 'object' ? video.author.username : video.author}</h3>
             <p className="text-xs text-muted-foreground">Original Audio</p>
           </div>
         </div>

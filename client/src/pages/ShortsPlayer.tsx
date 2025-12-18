@@ -110,9 +110,9 @@ export default function ShortsPlayer() {
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-8 h-8 bg-zinc-700 rounded-full overflow-hidden">
-                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${video.author}`} />
+                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof video.author === 'object' ? video.author.username : video.author}`} />
                 </div>
-                <span className="font-bold text-sm">@{video.author}</span>
+                <span className="font-bold text-sm">@{typeof video.author === 'object' ? video.author.username : video.author}</span>
                 <button className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full">Subscribe</button>
               </div>
               <h2 className="text-sm font-medium line-clamp-2 w-[85%]">{video.title}</h2>
