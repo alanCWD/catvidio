@@ -103,6 +103,7 @@ export async function processAndUploadToYouTube(
       title,
       description,
       privacyStatus: 'private', // Upload as private, to be approved later
+      thumbnailPath: thumbnail, // Custom thumbnail generated from video
       onProgress: (progress) => {
         console.log(`YouTube upload progress for video ${videoId}: ${progress}%`);
       }

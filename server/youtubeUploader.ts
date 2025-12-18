@@ -30,6 +30,7 @@ interface UploadOptions {
   tags?: string[];
   categoryId?: string;
   privacyStatus?: 'private' | 'unlisted' | 'public';
+  thumbnailPath?: string;
   onProgress?: (progress: number) => void;
 }
 
@@ -94,6 +95,7 @@ class YouTubeUploader {
       tags = ['cat', 'cats', 'catvid', 'catvid.io', 'cute cats', 'funny cats'],
       categoryId = '15', // 15 = Pets & Animals
       privacyStatus = 'private',
+      thumbnailPath,
       onProgress
     } = options;
 
@@ -133,6 +135,22 @@ class YouTubeUploader {
       );
 
       const videoId = res.data.id;
+      
+      // Try to set custom thumbnail if provided
+      if (thumbnailPath && fs.existsSync(thumbnailPath)) {
+        try {
+          await this.youtube.thumbnails.set({
+            videoId: videoId,
+            media: {
+              body: fs.createReadStream(thumbnailPath)
+            }
+          });
+          console.log(`Custom thumbnail set for video ${videoId}`);
+        } catch (thumbError: any) {
+          // Thumbnail upload may fail if channel isn't verified - continue anyway
+          console.log(`Could not set custom thumbnail: ${thumbError.message || 'Unknown error'}`);
+        }
+      }
       
       return {
         youtubeId: videoId,
