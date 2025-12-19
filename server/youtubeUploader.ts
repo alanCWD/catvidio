@@ -44,9 +44,17 @@ class YouTubeUploader {
   private oauth2Client: any;
   private youtube: any;
   private isConfigured: boolean = false;
+  private initialized: boolean = false;
 
   constructor() {
-    this.initialize();
+    // Defer initialization until first use for faster startup
+  }
+
+  private ensureInitialized() {
+    if (!this.initialized) {
+      this.initialize();
+      this.initialized = true;
+    }
   }
 
   // Parse ISO 8601 duration (e.g., "PT1M30S" = 90 seconds)
@@ -92,10 +100,12 @@ class YouTubeUploader {
   }
 
   isReady(): boolean {
+    this.ensureInitialized();
     return this.isConfigured;
   }
 
   async uploadVideo(options: UploadOptions): Promise<UploadResult> {
+    this.ensureInitialized();
     if (!this.isConfigured) {
       throw new Error('YouTube API not configured. Please set YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, and YOUTUBE_REFRESH_TOKEN environment variables.');
     }
@@ -234,6 +244,7 @@ class YouTubeUploader {
   }
 
   async getChannelVideos(maxResults: number = 50): Promise<any[]> {
+    this.ensureInitialized();
     if (!this.isConfigured) {
       console.log('YouTube API not configured - cannot fetch channel videos');
       return [];

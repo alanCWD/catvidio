@@ -22,7 +22,7 @@ export async function fetchAllVideos() {
     const formattedYoutubeVideos = youtubeVideos
       .filter((v: any) => !localYoutubeIds.has(v.youtubeId))
       .map((v: any) => {
-        const isLarryTheKat = v.title?.toLowerCase().includes('larry');
+        const isLarryTheKat = v.title?.toLowerCase() === 'larry the kat';
         const type = isLarryTheKat ? 'video' : (v.isShort ? 'short' : 'video');
         return {
         id: `yt-${v.youtubeId}`,

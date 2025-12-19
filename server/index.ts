@@ -23,6 +23,25 @@ app.use(
 
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// Health check endpoints - must respond immediately for deployment health checks
+// Both / and /health respond quickly before routes are fully set up
+let routesReady = false;
+
+app.get('/health', (_req, res) => {
+  res.status(200).send('OK');
+});
+
+// Early / handler for health checks - will be overridden by Vite/static serving once ready
+app.get('/', (req, res, next) => {
+  if (!routesReady) {
+    // During startup, respond quickly for health checks
+    res.status(200).send('OK');
+  } else {
+    // Once routes are ready, let other handlers take over
+    next();
+  }
+});
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -60,40 +79,46 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  await registerRoutes(httpServer, app);
+// ALWAYS serve the app on the port specified in the environment variable PORT
+// Other ports are firewalled. Default to 5000 if not specified.
+// this serves both the API and the client.
+// It is the only port that is not firewalled.
+const port = parseInt(process.env.PORT || "5000", 10);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+// Start listening IMMEDIATELY so health checks can pass while we do async setup
+httpServer.listen(
+  {
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+  },
+  () => {
+    log(`serving on port ${port}`);
+    
+    // Now do async setup after server is already listening
+    (async () => {
+      await registerRoutes(httpServer, app);
 
-    res.status(status).json({ message });
-    throw err;
-  });
+      app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        const status = err.status || err.statusCode || 500;
+        const message = err.message || "Internal Server Error";
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
-  }
+        res.status(status).json({ message });
+        throw err;
+      });
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
-})();
+      // importantly only setup vite in development and after
+      // setting up all the other routes so the catch-all route
+      // doesn't interfere with the other routes
+      if (process.env.NODE_ENV === "production") {
+        serveStatic(app);
+      } else {
+        const { setupVite } = await import("./vite");
+        await setupVite(httpServer, app);
+      }
+      
+      routesReady = true;
+      log('All routes registered');
+    })();
+  },
+);
