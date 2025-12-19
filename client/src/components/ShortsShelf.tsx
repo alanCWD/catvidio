@@ -27,9 +27,13 @@ export function ShortsShelf({ shorts }: ShortsShelfProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent p-2 flex flex-col justify-end">
               <div className="flex items-center gap-1.5 mb-1">
                 {(() => {
-                  const authorName = typeof short.author === 'object' ? short.author.username : short.author;
-                  const avatarColor = typeof short.author === 'object' ? short.author.avatarColor : '#FF0055';
-                  const avatar = typeof short.author === 'object' ? short.author.avatar : null;
+                  const authorObj = typeof short.author === 'object' ? short.author : null;
+                  const authorName = authorObj?.username || (typeof short.author === 'string' ? short.author : 'Unknown');
+                  const avatarColor = authorObj?.avatarColor || '#FF0055';
+                  const avatar = authorObj?.avatar || null;
+                  const posX = authorObj?.avatarPositionX ?? 50;
+                  const posY = authorObj?.avatarPositionY ?? 50;
+                  const scale = (authorObj?.avatarScale ?? 100) / 100;
                   
                   return (
                     <div 
@@ -37,7 +41,15 @@ export function ShortsShelf({ shorts }: ShortsShelfProps) {
                       style={{ borderColor: avatarColor || '#FF0055' }}
                     >
                       {avatar ? (
-                        <img src={avatar} alt="" className="w-full h-full object-cover" />
+                        <img 
+                          src={avatar} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                          style={{
+                            transform: `scale(${scale})`,
+                            transformOrigin: `${posX}% ${posY}%`,
+                          }}
+                        />
                       ) : (
                         <img 
                           src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${authorName || 'default'}`} 

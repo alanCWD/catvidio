@@ -51,6 +51,9 @@ export async function fetchAllVideos() {
           username: assignedCreator.username,
           avatar: assignedCreator.avatar,
           avatarColor: assignedCreator.avatarColor,
+          avatarPositionX: assignedCreator.avatarPositionX ?? 50,
+          avatarPositionY: assignedCreator.avatarPositionY ?? 50,
+          avatarScale: assignedCreator.avatarScale ?? 100,
         } : {
           username: v.channelTitle || 'CatVid io',
           avatar: null,

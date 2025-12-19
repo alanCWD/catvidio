@@ -3,6 +3,9 @@ export interface VideoAuthor {
   username: string;
   avatar?: string | null;
   avatarColor?: string;
+  avatarPositionX?: number;
+  avatarPositionY?: number;
+  avatarScale?: number;
 }
 
 export interface Video {

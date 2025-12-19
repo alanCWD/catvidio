@@ -138,7 +138,10 @@ export async function registerRoutes(
               username: author.username,
               avatar: author.avatar,
               avatarColor: author.avatarColor,
-            } : { username: "Unknown" },
+              avatarPositionX: author.avatarPositionX ?? 50,
+              avatarPositionY: author.avatarPositionY ?? 50,
+              avatarScale: author.avatarScale ?? 100,
+            } : { username: "Unknown", avatarColor: "#FF0055" },
           };
         })
       );

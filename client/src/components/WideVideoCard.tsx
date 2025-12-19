@@ -26,26 +26,40 @@ export function WideVideoCard({ video }: WideVideoCardProps) {
       {/* Meta Data */}
       <div className="px-3 py-3 flex gap-3">
         {/* Author Avatar */}
-        <div 
-          className="w-10 h-10 rounded-full shrink-0 mt-1 overflow-hidden border-2 flex-shrink-0"
-          style={{ 
-            borderColor: typeof video.author === 'object' && video.author.avatarColor ? video.author.avatarColor : '#FF0055'
-          }}
-        >
-          {typeof video.author === 'object' && video.author.avatar ? (
-            <img 
-              src={video.author.avatar} 
-              alt="avatar" 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof video.author === 'object' ? video.author.username : video.author}`} 
-              alt="avatar" 
-              className="w-full h-full object-cover bg-secondary"
-            />
-          )}
-        </div>
+        {(() => {
+          const authorObj = typeof video.author === 'object' ? video.author : null;
+          const avatarColor = authorObj?.avatarColor || '#FF0055';
+          const avatar = authorObj?.avatar || null;
+          const username = authorObj?.username || (typeof video.author === 'string' ? video.author : 'Unknown');
+          const posX = authorObj?.avatarPositionX ?? 50;
+          const posY = authorObj?.avatarPositionY ?? 50;
+          const scale = (authorObj?.avatarScale ?? 100) / 100;
+          
+          return (
+            <div 
+              className="w-10 h-10 rounded-full shrink-0 mt-1 overflow-hidden border-2 flex-shrink-0"
+              style={{ borderColor: avatarColor }}
+            >
+              {avatar ? (
+                <img 
+                  src={avatar} 
+                  alt="avatar" 
+                  className="w-full h-full object-cover"
+                  style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: `${posX}% ${posY}%`,
+                  }}
+                />
+              ) : (
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} 
+                  alt="avatar" 
+                  className="w-full h-full object-cover bg-secondary"
+                />
+              )}
+            </div>
+          );
+        })()}
 
         {/* Info Column */}
         <div className="flex-1 min-w-0">
