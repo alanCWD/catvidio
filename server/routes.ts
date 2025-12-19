@@ -7,6 +7,7 @@ import multer from "multer";
 import path from "path";
 import { processAndUploadToYouTube, ensureDirectories, isYouTubeConfigured } from "./videoProcessor";
 import { youtubeUploader } from "./youtubeUploader";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 
 const uploadStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -36,14 +37,23 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Setup Replit Auth (must be BEFORE other routes)
+  await setupAuth(app);
+  registerAuthRoutes(app);
+
   // ========== USER ROUTES ==========
   
-  // Get current user (mock session for now - ID 1)
-  app.get("/api/user/me", async (req, res) => {
+  // Get current user's cat profile
+  app.get("/api/user/me", isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(1);
+      const authUserId = req.user?.claims?.sub;
+      if (!authUserId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const user = await storage.getUserByAuthId(authUserId);
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "Profile not found", needsProfile: true });
       }
       res.json(user);
     } catch (error) {
@@ -52,22 +62,29 @@ export async function registerRoutes(
   });
 
   // Create or update user profile
-  app.post("/api/user/profile", async (req, res) => {
+  app.post("/api/user/profile", isAuthenticated, async (req: any, res) => {
     try {
+      const authUserId = req.user?.claims?.sub;
+      if (!authUserId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
       const data = insertUserSchema.parse(req.body);
       
-      // For now, always update user ID 1 (mock session)
-      // In a real app, you'd get the user ID from the session
-      const existingUser = await storage.getUser(1);
+      // Check if user already has a profile
+      const existingUser = await storage.getUserByAuthId(authUserId);
       
       if (existingUser) {
-        // Update existing user
+        // Update existing profile
         const updated = await storage.updateUser(existingUser.id, data);
         return res.json(updated);
       }
       
-      // Create new user
-      const newUser = await storage.createUser(data);
+      // Create new profile linked to auth user
+      const newUser = await storage.createUser({
+        ...data,
+        authUserId,
+      });
       res.json(newUser);
     } catch (error) {
       if (error instanceof z.ZodError) {

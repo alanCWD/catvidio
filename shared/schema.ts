@@ -2,9 +2,13 @@ import { pgTable, text, serial, integer, timestamp, boolean, varchar } from "dri
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users (Cat Profiles)
+// Re-export auth models
+export * from "./models/auth";
+
+// Users (Cat Profiles) - linked to auth_users via authUserId
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  authUserId: varchar("auth_user_id").unique(), // Links to auth_users.id (nullable for existing users)
   username: varchar("username", { length: 100 }).notNull().unique(),
   tagline: text("tagline").default("Cat Enthusiast & Content Creator"),
   avatar: text("avatar"),
