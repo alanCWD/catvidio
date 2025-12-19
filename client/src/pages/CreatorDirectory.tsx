@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Edit2, User, Video } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { ArrowLeft, Plus, Edit2, User, Video, Upload, Check, Move } from "lucide-react";
 import { 
   fetchCreators, 
   createCreator, 
@@ -34,6 +35,9 @@ interface Creator {
   tagline?: string;
   avatar?: string;
   avatarColor?: string;
+  avatarPositionX?: number;
+  avatarPositionY?: number;
+  avatarScale?: number;
 }
 
 interface YouTubeVideo {
@@ -61,7 +65,12 @@ export default function CreatorDirectory() {
     username: "",
     tagline: "",
     avatarColor: "#FF0055",
+    avatar: "",
+    avatarPositionX: 50,
+    avatarPositionY: 50,
+    avatarScale: 100,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -84,11 +93,34 @@ export default function CreatorDirectory() {
     }
   };
 
+  const resetFormData = () => {
+    setFormData({
+      username: "",
+      tagline: "",
+      avatarColor: "#FF0055",
+      avatar: "",
+      avatarPositionX: 50,
+      avatarPositionY: 50,
+      avatarScale: 100,
+    });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, avatar: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleCreateCreator = async () => {
     try {
       await createCreator(formData);
       setShowCreateDialog(false);
-      setFormData({ username: "", tagline: "", avatarColor: "#FF0055" });
+      resetFormData();
       loadData();
     } catch (error: any) {
       alert(error.message || "Failed to create creator");
@@ -100,7 +132,7 @@ export default function CreatorDirectory() {
     try {
       await updateCreator(editingCreator.id, formData);
       setEditingCreator(null);
-      setFormData({ username: "", tagline: "", avatarColor: "#FF0055" });
+      resetFormData();
       loadData();
     } catch (error: any) {
       alert(error.message || "Failed to update creator");
@@ -127,8 +159,135 @@ export default function CreatorDirectory() {
       username: creator.username,
       tagline: creator.tagline || "",
       avatarColor: creator.avatarColor || "#FF0055",
+      avatar: creator.avatar || "",
+      avatarPositionX: creator.avatarPositionX ?? 50,
+      avatarPositionY: creator.avatarPositionY ?? 50,
+      avatarScale: creator.avatarScale ?? 100,
     });
   };
+
+  const renderAvatarPreview = () => {
+    if (!formData.avatar) return null;
+    const scale = formData.avatarScale / 100;
+    return (
+      <div 
+        className="w-24 h-24 rounded-full overflow-hidden border-4 mx-auto relative"
+        style={{ borderColor: formData.avatarColor }}
+      >
+        <img 
+          src={formData.avatar} 
+          alt="Preview" 
+          className="absolute w-full h-full object-cover"
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: `${formData.avatarPositionX}% ${formData.avatarPositionY}%`,
+          }}
+        />
+      </div>
+    );
+  };
+
+  const renderImageEditor = () => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Label>Avatar Image</Label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          data-testid="button-upload-image"
+        >
+          <Upload size={14} className="mr-1" />
+          {formData.avatar ? "Change" : "Upload"}
+        </Button>
+      </div>
+      
+      {formData.avatar && (
+        <>
+          {renderAvatarPreview()}
+          <div className="space-y-3 pt-2">
+            <div>
+              <Label className="text-xs text-gray-500 flex items-center gap-1">
+                <Move size={12} /> Horizontal Position
+              </Label>
+              <Slider
+                value={[formData.avatarPositionX]}
+                onValueChange={([val]) => setFormData({ ...formData, avatarPositionX: val })}
+                min={0}
+                max={100}
+                step={1}
+                className="mt-1"
+                data-testid="slider-position-x"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 flex items-center gap-1">
+                <Move size={12} /> Vertical Position
+              </Label>
+              <Slider
+                value={[formData.avatarPositionY]}
+                onValueChange={([val]) => setFormData({ ...formData, avatarPositionY: val })}
+                min={0}
+                max={100}
+                step={1}
+                className="mt-1"
+                data-testid="slider-position-y"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Zoom</Label>
+              <Slider
+                value={[formData.avatarScale]}
+                onValueChange={([val]) => setFormData({ ...formData, avatarScale: val })}
+                min={50}
+                max={200}
+                step={5}
+                className="mt-1"
+                data-testid="slider-zoom"
+              />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const renderAuraColorPicker = () => (
+    <div>
+      <Label>Aura Color</Label>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {AURA_COLORS.map((color) => (
+          <button
+            key={color.value}
+            onClick={() => setFormData({ ...formData, avatarColor: color.value })}
+            className={`w-8 h-8 rounded-full border-2 relative flex items-center justify-center transition-transform ${
+              formData.avatarColor === color.value 
+                ? "border-white scale-110 ring-2 ring-offset-2 ring-offset-background" 
+                : "border-transparent hover:scale-105"
+            }`}
+            style={{ 
+              backgroundColor: color.value,
+              "--tw-ring-color": color.value,
+            } as React.CSSProperties}
+            title={color.name}
+            data-testid={`button-color-${color.name.toLowerCase()}`}
+          >
+            {formData.avatarColor === color.value && (
+              <Check size={16} className="text-white drop-shadow-md" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -164,7 +323,7 @@ export default function CreatorDirectory() {
                     Add Creator
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Create New Creator</DialogTitle>
                   </DialogHeader>
@@ -189,23 +348,8 @@ export default function CreatorDirectory() {
                         data-testid="input-creator-tagline"
                       />
                     </div>
-                    <div>
-                      <Label>Aura Color</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {AURA_COLORS.map((color) => (
-                          <button
-                            key={color.value}
-                            onClick={() => setFormData({ ...formData, avatarColor: color.value })}
-                            className={`w-8 h-8 rounded-full border-2 ${
-                              formData.avatarColor === color.value ? "border-white" : "border-transparent"
-                            }`}
-                            style={{ backgroundColor: color.value }}
-                            title={color.name}
-                            data-testid={`button-color-${color.name.toLowerCase()}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                    {renderImageEditor()}
+                    {renderAuraColorPicker()}
                     <Button onClick={handleCreateCreator} className="w-full" data-testid="button-save-creator">
                       Create Creator
                     </Button>
@@ -215,17 +359,35 @@ export default function CreatorDirectory() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {creators.map((creator) => (
+              {creators.map((creator) => {
+                const scale = (creator.avatarScale ?? 100) / 100;
+                const posX = creator.avatarPositionX ?? 50;
+                const posY = creator.avatarPositionY ?? 50;
+                
+                return (
                 <Card key={creator.id} data-testid={`card-creator-${creator.id}`}>
                   <CardContent className="flex items-center gap-4 p-4">
                     <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                      style={{ backgroundColor: creator.avatarColor || "#FF0055" }}
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg overflow-hidden border-2"
+                      style={{ borderColor: creator.avatarColor || "#FF0055" }}
                     >
                       {creator.avatar ? (
-                        <img src={creator.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                        <img 
+                          src={creator.avatar} 
+                          alt="" 
+                          className="w-full h-full object-cover" 
+                          style={{
+                            transform: `scale(${scale})`,
+                            transformOrigin: `${posX}% ${posY}%`,
+                          }}
+                        />
                       ) : (
-                        creator.username.charAt(0).toUpperCase()
+                        <div 
+                          className="w-full h-full flex items-center justify-center"
+                          style={{ backgroundColor: creator.avatarColor || "#FF0055" }}
+                        >
+                          {creator.username.charAt(0).toUpperCase()}
+                        </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -243,7 +405,8 @@ export default function CreatorDirectory() {
                     </button>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
           </section>
 
@@ -295,7 +458,7 @@ export default function CreatorDirectory() {
       </div>
 
       <Dialog open={!!editingCreator} onOpenChange={(open) => !open && setEditingCreator(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Creator</DialogTitle>
           </DialogHeader>
@@ -318,22 +481,8 @@ export default function CreatorDirectory() {
                 data-testid="input-edit-tagline"
               />
             </div>
-            <div>
-              <Label>Aura Color</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {AURA_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => setFormData({ ...formData, avatarColor: color.value })}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      formData.avatarColor === color.value ? "border-white" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
+            {renderImageEditor()}
+            {renderAuraColorPicker()}
             <Button onClick={handleUpdateCreator} className="w-full" data-testid="button-update-creator">
               Update Creator
             </Button>
