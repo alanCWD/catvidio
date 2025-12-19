@@ -4,7 +4,8 @@ import { ArrowLeft, Camera, Sparkles, Wand2, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { createOrUpdateProfile, fetchCurrentUser } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
+import { createOrUpdateProfile } from "@/lib/api";
 
 const CAT_COLORS = [
   "#FF0055", // Hot Pink
@@ -18,6 +19,7 @@ const CAT_COLORS = [
 export default function CreateProfile() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [step, setStep] = useState<"upload" | "processing" | "result">("upload");
@@ -27,12 +29,16 @@ export default function CreateProfile() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetchCurrentUser().then((user) => {
-      if (user?.username) {
-        setName(user.username);
-      }
-    }).catch(() => {});
-  }, []);
+    if (!isLoading && !isAuthenticated) {
+      window.location.href = "/api/login";
+    }
+  }, [isLoading, isAuthenticated]);
+
+  useEffect(() => {
+    if (user?.username) {
+      setName(user.username);
+    }
+  }, [user]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -104,6 +110,16 @@ export default function CreateProfile() {
       setIsSaving(false);
     }
   };
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
