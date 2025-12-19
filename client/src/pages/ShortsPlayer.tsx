@@ -2,7 +2,7 @@ import { useRoute, useLocation } from "wouter";
 import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical, Play, Youtube } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Layout } from "@/components/Layout";
-import { fetchVideos } from "@/lib/api";
+import { fetchAllVideos } from "@/lib/api";
 import { formatVideoForComponent } from "@/lib/format";
 
 export default function ShortsPlayer() {
@@ -14,10 +14,10 @@ export default function ShortsPlayer() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    fetchVideos()
+    fetchAllVideos()
       .then(data => {
         const formatted = data.map(formatVideoForComponent);
-        const shortVideos = formatted.filter(v => v.type === 'short');
+        const shortVideos = formatted.filter((v: any) => v.type === 'short');
         setShorts(shortVideos);
         setLoading(false);
       })
