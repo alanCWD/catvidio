@@ -12,6 +12,7 @@ import ShortsPlayer from "@/pages/ShortsPlayer";
 import CreateProfile from "@/pages/CreateProfile";
 import Settings from "@/pages/Settings";
 import YouTubeSetup from "@/pages/YouTubeSetup";
+import CreatorDirectory from "@/pages/CreatorDirectory";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/shorts/:id" component={ShortsPlayer} />
       <Route path="/admin/youtube-setup" component={YouTubeSetup} />
+      <Route path="/admin/creators" component={CreatorDirectory} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
-import { ArrowLeft, Save, User, FileText } from "lucide-react";
+import { ArrowLeft, Save, User, FileText, Users, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import { MOCK_USER } from "@/lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +75,31 @@ export default function Settings() {
                 <p className="text-xs text-muted-foreground text-right">{tagline.length}/150</p>
               </div>
             </div>
+          </section>
+
+          {/* Admin Section */}
+          <section className="space-y-4">
+             <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Admin</h2>
+             <div className="bg-secondary/30 rounded-xl overflow-hidden border border-border">
+               <button 
+                 onClick={() => setLocation("/admin/creators")}
+                 className="w-full text-left px-4 py-3 hover:bg-secondary/50 border-b border-border flex justify-between items-center text-sm"
+                 data-testid="button-creator-directory"
+               >
+                 <span className="flex items-center gap-2">
+                   <Users size={16} />
+                   Creator Directory
+                 </span>
+                 <ChevronRight size={16} className="text-muted-foreground" />
+               </button>
+               <button 
+                 onClick={() => setLocation("/admin/youtube-setup")}
+                 className="w-full text-left px-4 py-3 hover:bg-secondary/50 flex justify-between items-center text-sm"
+               >
+                 <span>YouTube Setup</span>
+                 <ChevronRight size={16} className="text-muted-foreground" />
+               </button>
+             </div>
           </section>
 
           {/* Account Section (Mock) */}

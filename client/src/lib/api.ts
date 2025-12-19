@@ -12,18 +12,29 @@ export async function fetchYouTubeChannelVideos() {
 
 export async function fetchAllVideos() {
   try {
-    const [localVideos, youtubeVideos] = await Promise.all([
+    const [localVideos, youtubeVideos, creatorMappings] = await Promise.all([
       fetchVideos().catch(() => []),
       fetchYouTubeChannelVideos().catch(() => []),
+      fetchYoutubeVideoCreators().catch(() => []),
     ]);
     
     const localYoutubeIds = new Set(localVideos.map((v: any) => v.youtubeId));
+    
+    // Create a map of youtubeId -> creator for quick lookup
+    const creatorMap = new Map<string, any>();
+    creatorMappings.forEach((mapping: any) => {
+      creatorMap.set(mapping.youtubeId, mapping.creator);
+    });
     
     const formattedYoutubeVideos = youtubeVideos
       .filter((v: any) => !localYoutubeIds.has(v.youtubeId))
       .map((v: any) => {
         const isLarryTheKat = v.title?.toLowerCase() === 'larry the kat';
         const type = isLarryTheKat ? 'video' : (v.isShort ? 'short' : 'video');
+        
+        // Check if this video has a creator assigned
+        const assignedCreator = creatorMap.get(v.youtubeId);
+        
         return {
         id: `yt-${v.youtubeId}`,
         youtubeId: v.youtubeId,
@@ -35,7 +46,12 @@ export async function fetchAllVideos() {
         type,
         upvoteCount: v.likeCount || 0,
         commentCount: v.commentCount || 0,
-        author: {
+        author: assignedCreator ? {
+          id: assignedCreator.id,
+          username: assignedCreator.username,
+          avatar: assignedCreator.avatar,
+          avatarColor: assignedCreator.avatarColor,
+        } : {
           username: v.channelTitle || 'CatVid io',
           avatar: null,
           avatarColor: '#FF0055',
@@ -232,5 +248,70 @@ export async function unsubscribe(creatorId: number) {
 export async function getSubscriptionStatus(creatorId: number) {
   const response = await fetch(`/api/subscription/${creatorId}/status`);
   if (!response.ok) throw new Error('Failed to get subscription status');
+  return response.json();
+}
+
+// Creator management
+export async function fetchCreators() {
+  const response = await fetch('/api/creators');
+  if (!response.ok) throw new Error('Failed to fetch creators');
+  return response.json();
+}
+
+export async function createCreator(data: {
+  username: string;
+  tagline?: string;
+  avatar?: string;
+  avatarColor?: string;
+}) {
+  const response = await fetch('/api/creators', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create creator');
+  }
+  return response.json();
+}
+
+export async function updateCreator(id: number, data: Partial<{
+  username: string;
+  tagline?: string;
+  avatar?: string;
+  avatarColor?: string;
+}>) {
+  const response = await fetch(`/api/creators/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Failed to update creator');
+  return response.json();
+}
+
+// YouTube video to creator assignment
+export async function fetchYoutubeVideoCreators() {
+  const response = await fetch('/api/youtube-video-creators');
+  if (!response.ok) throw new Error('Failed to fetch video assignments');
+  return response.json();
+}
+
+export async function assignVideoToCreator(youtubeId: string, creatorId: number) {
+  const response = await fetch('/api/youtube-video-creators', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ youtubeId, creatorId }),
+  });
+  if (!response.ok) throw new Error('Failed to assign video to creator');
+  return response.json();
+}
+
+export async function removeVideoCreatorAssignment(youtubeId: string) {
+  const response = await fetch(`/api/youtube-video-creators/${youtubeId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to remove assignment');
   return response.json();
 }

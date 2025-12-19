@@ -1,11 +1,12 @@
 import { 
-  users, videos, upvotes, comments, subscriptions, notifications,
+  users, videos, upvotes, comments, subscriptions, notifications, youtubeVideoCreators,
   type User, type InsertUser,
   type Video, type InsertVideo,
   type Upvote, type InsertUpvote,
   type Comment, type InsertComment,
   type Subscription, type InsertSubscription,
-  type Notification, type InsertNotification
+  type Notification, type InsertNotification,
+  type YoutubeVideoCreator, type InsertYoutubeVideoCreator
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -54,6 +55,15 @@ export interface IStorage {
   getNotificationsByUser(userId: number): Promise<Notification[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationsRead(userId: number): Promise<void>;
+  
+  // Creators (all users who can own videos)
+  getAllCreators(): Promise<User[]>;
+  
+  // YouTube Video to Creator mapping
+  getYoutubeVideoCreator(youtubeId: string): Promise<YoutubeVideoCreator | undefined>;
+  getAllYoutubeVideoCreators(): Promise<Array<YoutubeVideoCreator & { creator: User }>>;
+  assignYoutubeVideoToCreator(youtubeId: string, creatorId: number): Promise<YoutubeVideoCreator>;
+  removeYoutubeVideoCreator(youtubeId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -276,6 +286,51 @@ export class DatabaseStorage implements IStorage {
       .update(notifications)
       .set({ read: true })
       .where(eq(notifications.userId, userId));
+  }
+
+  // Creators
+  async getAllCreators(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  // YouTube Video to Creator mapping
+  async getYoutubeVideoCreator(youtubeId: string): Promise<YoutubeVideoCreator | undefined> {
+    const [mapping] = await db
+      .select()
+      .from(youtubeVideoCreators)
+      .where(eq(youtubeVideoCreators.youtubeId, youtubeId));
+    return mapping || undefined;
+  }
+
+  async getAllYoutubeVideoCreators(): Promise<Array<YoutubeVideoCreator & { creator: User }>> {
+    const results = await db
+      .select({
+        mapping: youtubeVideoCreators,
+        creator: users,
+      })
+      .from(youtubeVideoCreators)
+      .innerJoin(users, eq(youtubeVideoCreators.creatorId, users.id));
+
+    return results.map(r => ({ ...r.mapping, creator: r.creator }));
+  }
+
+  async assignYoutubeVideoToCreator(youtubeId: string, creatorId: number): Promise<YoutubeVideoCreator> {
+    // Use upsert to handle reassignment
+    const [mapping] = await db
+      .insert(youtubeVideoCreators)
+      .values({ youtubeId, creatorId })
+      .onConflictDoUpdate({
+        target: youtubeVideoCreators.youtubeId,
+        set: { creatorId },
+      })
+      .returning();
+    return mapping;
+  }
+
+  async removeYoutubeVideoCreator(youtubeId: string): Promise<void> {
+    await db
+      .delete(youtubeVideoCreators)
+      .where(eq(youtubeVideoCreators.youtubeId, youtubeId));
   }
 }
 

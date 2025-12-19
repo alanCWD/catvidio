@@ -1,15 +1,22 @@
+export interface VideoAuthor {
+  id?: number;
+  username: string;
+  avatar?: string | null;
+  avatarColor?: string;
+}
+
 export interface Video {
   id: string;
   type: 'video' | 'short';
   youtubeId: string;
   title: string;
   description: string;
-  tags: string[];
+  tags?: string[];
   upvotes: number;
   comments: number;
-  author: string;
+  author: string | VideoAuthor;
   thumbnail: string;
-  earnings: number;
+  earnings?: number;
   views: string;
   uploaded: string;
   topComment?: {

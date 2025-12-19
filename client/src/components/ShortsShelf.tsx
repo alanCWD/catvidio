@@ -1,16 +1,10 @@
 import { Video } from "@/lib/mock-data";
 import { Link } from "wouter";
 import { ZoomiesLogo } from "@/components/Branding";
-import funnyCat from "@assets/stock_images/funny_cat_vertical_v_3b358a6e.jpg";
-import cuteKitten from "@assets/stock_images/cute_kitten_vertical_c88abb22.jpg";
-import catJumping from "@assets/stock_images/cat_jumping_vertical_f26c7765.jpg";
-import grumpyCat from "@assets/stock_images/grumpy_cat_vertical__486b45fa.jpg";
 
 interface ShortsShelfProps {
   shorts: Video[];
 }
-
-const thumbnails = [funnyCat, cuteKitten, catJumping, grumpyCat];
 
 export function ShortsShelf({ shorts }: ShortsShelfProps) {
   return (
@@ -23,14 +17,38 @@ export function ShortsShelf({ shorts }: ShortsShelfProps) {
       </div>
       
       <div className="grid grid-cols-2 gap-2 px-2 pb-4">
-        {shorts.slice(0, 4).map((short, idx) => (
+        {shorts.slice(0, 4).map((short) => (
           <Link key={short.id} href={`/shorts/${short.id}`} className="block group relative aspect-[9/16] rounded-xl overflow-hidden bg-muted">
             <img 
-              src={thumbnails[idx % thumbnails.length]} 
+              src={short.thumbnail} 
               alt={short.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent p-2 flex flex-col justify-end">
+              <div className="flex items-center gap-1.5 mb-1">
+                {(() => {
+                  const authorName = typeof short.author === 'object' ? short.author.username : short.author;
+                  const avatarColor = typeof short.author === 'object' ? short.author.avatarColor : '#FF0055';
+                  const avatar = typeof short.author === 'object' ? short.author.avatar : null;
+                  
+                  return (
+                    <div 
+                      className="w-5 h-5 rounded-full overflow-hidden border flex-shrink-0"
+                      style={{ borderColor: avatarColor || '#FF0055' }}
+                    >
+                      {avatar ? (
+                        <img src={avatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <img 
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${authorName || 'default'}`} 
+                          alt="" 
+                          className="w-full h-full object-cover bg-secondary"
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
               <h3 className="text-white text-sm font-medium line-clamp-2 leading-tight drop-shadow-md mb-1">
                 {short.title}
               </h3>

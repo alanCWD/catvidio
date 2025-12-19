@@ -127,3 +127,19 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+// YouTube Video to Creator mapping (for videos not in local database)
+export const youtubeVideoCreators = pgTable("youtube_video_creators", {
+  id: serial("id").primaryKey(),
+  youtubeId: varchar("youtube_id", { length: 20 }).notNull().unique(),
+  creatorId: integer("creator_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertYoutubeVideoCreatorSchema = createInsertSchema(youtubeVideoCreators).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertYoutubeVideoCreator = z.infer<typeof insertYoutubeVideoCreatorSchema>;
+export type YoutubeVideoCreator = typeof youtubeVideoCreators.$inferSelect;

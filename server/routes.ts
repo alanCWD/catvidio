@@ -579,6 +579,97 @@ export async function registerRoutes(
     }
   });
 
+  // ========== CREATOR MANAGEMENT ROUTES ==========
+  
+  // Get all creators
+  app.get("/api/creators", async (req, res) => {
+    try {
+      const creators = await storage.getAllCreators();
+      res.json(creators);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch creators" });
+    }
+  });
+
+  // Create a new creator profile
+  app.post("/api/creators", async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const creator = await storage.createUser(data);
+      res.json(creator);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      if ((error as any)?.code === '23505') {
+        return res.status(409).json({ error: "Username already taken" });
+      }
+      res.status(500).json({ error: "Failed to create creator" });
+    }
+  });
+
+  // Update a creator profile
+  app.patch("/api/creators/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = insertUserSchema.partial().parse(req.body);
+      const creator = await storage.updateUser(id, updates);
+      res.json(creator);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update creator" });
+    }
+  });
+
+  // ========== YOUTUBE VIDEO ASSIGNMENT ROUTES ==========
+  
+  // Get all YouTube video to creator mappings
+  app.get("/api/youtube-video-creators", async (req, res) => {
+    try {
+      const mappings = await storage.getAllYoutubeVideoCreators();
+      res.json(mappings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch mappings" });
+    }
+  });
+
+  // Assign a YouTube video to a creator
+  app.post("/api/youtube-video-creators", async (req, res) => {
+    try {
+      const { youtubeId, creatorId } = req.body;
+      if (!youtubeId || typeof youtubeId !== 'string') {
+        return res.status(400).json({ error: "youtubeId is required and must be a string" });
+      }
+      if (!creatorId || typeof creatorId !== 'number') {
+        return res.status(400).json({ error: "creatorId is required and must be a number" });
+      }
+      
+      // Verify the creator exists
+      const creator = await storage.getUser(creatorId);
+      if (!creator) {
+        return res.status(404).json({ error: "Creator not found" });
+      }
+      
+      const mapping = await storage.assignYoutubeVideoToCreator(youtubeId, creatorId);
+      res.json(mapping);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to assign video to creator" });
+    }
+  });
+
+  // Remove a YouTube video to creator mapping
+  app.delete("/api/youtube-video-creators/:youtubeId", async (req, res) => {
+    try {
+      const { youtubeId } = req.params;
+      await storage.removeYoutubeVideoCreator(youtubeId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove mapping" });
+    }
+  });
+
   return httpServer;
 }
 

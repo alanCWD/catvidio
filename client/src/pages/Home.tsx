@@ -43,10 +43,10 @@ export default function Home() {
           if (a.type === 'video' && b.type === 'short') return -1;
           if (a.type === 'short' && b.type === 'video') return 1;
           
-          // Within wide videos, prioritize "Larry The Kat" as hero
+          // Within wide videos, prioritize "Larry The Kat" (exact match) as hero
           if (a.type === 'video' && b.type === 'video') {
-            const aIsLarry = a.title?.toLowerCase().includes('larry');
-            const bIsLarry = b.title?.toLowerCase().includes('larry');
+            const aIsLarry = a.title?.toLowerCase() === 'larry the kat';
+            const bIsLarry = b.title?.toLowerCase() === 'larry the kat';
             if (aIsLarry && !bIsLarry) return -1;
             if (!aIsLarry && bIsLarry) return 1;
           }
