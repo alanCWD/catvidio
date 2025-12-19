@@ -1,6 +1,6 @@
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical, Play } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { fetchVideos } from "@/lib/api";
 import { formatVideoForComponent } from "@/lib/format";
@@ -11,6 +11,7 @@ export default function ShortsPlayer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [shorts, setShorts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     fetchVideos()
@@ -25,6 +26,24 @@ export default function ShortsPlayer() {
         setLoading(false);
       });
   }, []);
+
+  // Track which video is currently visible
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollTop = container.scrollTop;
+      const height = container.clientHeight;
+      const newIndex = Math.round(scrollTop / height);
+      if (newIndex !== activeIndex && newIndex >= 0 && newIndex < shorts.length) {
+        setActiveIndex(newIndex);
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [activeIndex, shorts.length]);
 
   const initialVideoId = params?.id;
   
@@ -67,17 +86,32 @@ export default function ShortsPlayer() {
         className="h-full w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
         style={{ scrollBehavior: 'smooth' }}
       >
-        {sortedShorts.map((video) => (
+        {sortedShorts.map((video, index) => (
           <div key={video.id} className="h-full w-full snap-start relative bg-gray-900 flex items-center justify-center">
-            {/* Video Player */}
+            {/* Video Player - only render iframe for active video */}
             <div className="w-full h-full relative">
-               <iframe
-                src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&loop=1&playlist=${video.youtubeId}`}
-                title={video.title}
-                className="w-full h-full object-cover pointer-events-none" // Disable interaction with YT player to keep swipe feeling native
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              {index === activeIndex ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&loop=1&playlist=${video.youtubeId}&mute=0`}
+                  title={video.title}
+                  className="w-full h-full object-cover pointer-events-none"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-black">
+                  <img 
+                    src={video.thumbnail} 
+                    alt={video.title}
+                    className="w-full h-full object-cover opacity-50"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-white/20 p-4 rounded-full backdrop-blur-sm">
+                      <Play size={48} fill="white" className="text-white ml-1" />
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Overlay for touch events if needed */}
               <div className="absolute inset-0 bg-transparent z-10" />
             </div>
