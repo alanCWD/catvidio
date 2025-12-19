@@ -143,9 +143,40 @@ export default function ShortsPlayer() {
             {/* Bottom Meta Info */}
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <div className="w-8 h-8 bg-zinc-700 rounded-full overflow-hidden flex-shrink-0">
-                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof video.author === 'object' ? video.author.username : video.author}`} />
-                </div>
+                {(() => {
+                  const authorObj = typeof video.author === 'object' ? video.author : null;
+                  const avatarColor = authorObj?.avatarColor || '#FF0055';
+                  const avatar = authorObj?.avatar || null;
+                  const username = authorObj?.username || (typeof video.author === 'string' ? video.author : 'Unknown');
+                  const posX = authorObj?.avatarPositionX ?? 50;
+                  const posY = authorObj?.avatarPositionY ?? 50;
+                  const scale = (authorObj?.avatarScale ?? 100) / 100;
+                  
+                  return (
+                    <div 
+                      className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2"
+                      style={{ borderColor: avatarColor }}
+                    >
+                      {avatar ? (
+                        <img 
+                          src={avatar} 
+                          alt="avatar"
+                          className="w-full h-full object-cover"
+                          style={{
+                            transform: `scale(${scale})`,
+                            transformOrigin: `${posX}% ${posY}%`,
+                          }}
+                        />
+                      ) : (
+                        <img 
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} 
+                          alt="avatar"
+                          className="w-full h-full object-cover bg-zinc-700"
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
                 <span className="font-bold text-sm">@{typeof video.author === 'object' ? video.author.username : video.author}</span>
                 <button 
                   className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full"
