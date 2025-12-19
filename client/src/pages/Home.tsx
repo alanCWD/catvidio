@@ -35,7 +35,26 @@ export default function Home() {
     fetchAllVideos()
       .then(data => {
         const formatted = data.map(formatVideoForComponent);
-        setVideos(formatted);
+        
+        // Sort videos: wide videos first (sorted by views/recency), then shorts
+        // Also prioritize "Larry The Kat" as the hero video
+        const sorted = formatted.sort((a: any, b: any) => {
+          // Wide videos come before shorts
+          if (a.type === 'video' && b.type === 'short') return -1;
+          if (a.type === 'short' && b.type === 'video') return 1;
+          
+          // Within wide videos, prioritize "Larry The Kat" as hero
+          if (a.type === 'video' && b.type === 'video') {
+            const aIsLarry = a.title?.toLowerCase().includes('larry');
+            const bIsLarry = b.title?.toLowerCase().includes('larry');
+            if (aIsLarry && !bIsLarry) return -1;
+            if (!aIsLarry && bIsLarry) return 1;
+          }
+          
+          return 0;
+        });
+        
+        setVideos(sorted);
         setLoading(false);
       })
       .catch(err => {
