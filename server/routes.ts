@@ -90,6 +90,10 @@ export async function registerRoutes(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
+      // Check for duplicate username error
+      if ((error as any)?.code === '23505' && (error as any)?.constraint === 'users_username_unique') {
+        return res.status(409).json({ error: "This username is already taken. Please choose a different name." });
+      }
       console.error('Profile save error:', error);
       res.status(500).json({ error: "Failed to save profile" });
     }
