@@ -35,6 +35,13 @@ Preferred communication style: Simple, everyday language.
 - **Users**: Profile with username, tagline, avatar, wallet balance, total views
 - **Videos**: Supports both regular videos and shorts, tracks processing status (pending → processing → uploaded → approved), stores YouTube ID after upload
 - **Social Features**: Upvotes, comments, subscriptions, notifications
+- **YouTube Video Creators**: Maps YouTube video IDs to creator profiles for multi-creator support
+
+### Creator Management
+- **Creator Directory**: Admin page at `/admin/creators` for managing creator profiles
+- **Video Assignment**: Assign imported YouTube videos to specific creators
+- **Author Display**: Videos show assigned creator's avatar and profile in UI
+- **Fallback System**: Unassigned videos show channel name with generated avatar
 
 ### External Integrations
 - **YouTube Data API v3**: OAuth2 flow for uploading processed videos to YouTube AND fetching channel videos
