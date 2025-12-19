@@ -432,6 +432,18 @@ export async function registerRoutes(
     });
   });
 
+  // Get videos from YouTube channel (works in both dev and production)
+  app.get("/api/youtube/channel-videos", async (req, res) => {
+    try {
+      const maxResults = parseInt(req.query.maxResults as string) || 50;
+      const videos = await youtubeUploader.getChannelVideos(maxResults);
+      res.json(videos);
+    } catch (error: any) {
+      console.error('Error fetching channel videos:', error);
+      res.status(500).json({ error: "Failed to fetch channel videos" });
+    }
+  });
+
   // Generate YouTube authorization URL
   app.get("/api/youtube/auth-url", async (req, res) => {
     try {

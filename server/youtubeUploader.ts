@@ -220,6 +220,84 @@ class YouTubeUploader {
       refreshToken: tokens.refresh_token
     };
   }
+
+  async getChannelVideos(maxResults: number = 50): Promise<any[]> {
+    if (!this.isConfigured) {
+      console.log('YouTube API not configured - cannot fetch channel videos');
+      return [];
+    }
+
+    try {
+      // First, get the authenticated user's channel
+      const channelResponse = await this.youtube.channels.list({
+        part: ['contentDetails'],
+        mine: true
+      });
+
+      if (!channelResponse.data.items || channelResponse.data.items.length === 0) {
+        console.log('No channel found for authenticated user');
+        return [];
+      }
+
+      const uploadsPlaylistId = channelResponse.data.items[0].contentDetails.relatedPlaylists.uploads;
+
+      // Fetch videos from the uploads playlist
+      const playlistResponse = await this.youtube.playlistItems.list({
+        part: ['snippet', 'contentDetails', 'status'],
+        playlistId: uploadsPlaylistId,
+        maxResults: maxResults
+      });
+
+      if (!playlistResponse.data.items) {
+        return [];
+      }
+
+      // Get video IDs to fetch additional details (view counts, etc.)
+      const videoIds = playlistResponse.data.items.map((item: any) => item.contentDetails.videoId);
+      
+      const videosResponse = await this.youtube.videos.list({
+        part: ['snippet', 'statistics', 'status'],
+        id: videoIds.join(',')
+      });
+
+      const videoDetails = new Map();
+      if (videosResponse.data.items) {
+        videosResponse.data.items.forEach((video: any) => {
+          videoDetails.set(video.id, {
+            viewCount: parseInt(video.statistics?.viewCount || '0'),
+            likeCount: parseInt(video.statistics?.likeCount || '0'),
+            commentCount: parseInt(video.statistics?.commentCount || '0'),
+            privacyStatus: video.status?.privacyStatus
+          });
+        });
+      }
+
+      return playlistResponse.data.items.map((item: any) => {
+        const videoId = item.contentDetails.videoId;
+        const details = videoDetails.get(videoId) || {};
+        
+        return {
+          youtubeId: videoId,
+          title: item.snippet.title,
+          description: item.snippet.description,
+          thumbnail: item.snippet.thumbnails?.maxres?.url || 
+                    item.snippet.thumbnails?.high?.url || 
+                    item.snippet.thumbnails?.medium?.url ||
+                    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          publishedAt: item.snippet.publishedAt,
+          channelTitle: item.snippet.channelTitle,
+          viewCount: details.viewCount || 0,
+          likeCount: details.likeCount || 0,
+          commentCount: details.commentCount || 0,
+          privacyStatus: details.privacyStatus || 'unknown',
+          url: `https://www.youtube.com/watch?v=${videoId}`
+        };
+      });
+    } catch (error: any) {
+      console.error('Error fetching channel videos:', error.message);
+      return [];
+    }
+  }
 }
 
 export const youtubeUploader = new YouTubeUploader();

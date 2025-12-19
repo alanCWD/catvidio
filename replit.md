@@ -37,7 +37,8 @@ Preferred communication style: Simple, everyday language.
 - **Social Features**: Upvotes, comments, subscriptions, notifications
 
 ### External Integrations
-- **YouTube Data API v3**: OAuth2 flow for uploading processed videos to YouTube
+- **YouTube Data API v3**: OAuth2 flow for uploading processed videos to YouTube AND fetching channel videos
+  - `GET /api/youtube/channel-videos` - Fetches all videos from the connected YouTube channel (works in both dev and production)
 - **Video Processing Pipeline**: Raw upload → FFmpeg processing (resize, add intro/outro) → YouTube upload
 
 ### Build & Deployment
