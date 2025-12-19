@@ -151,3 +151,39 @@ export async function getVideoStatus(id: number): Promise<{ id: number; status: 
   if (!response.ok) throw new Error('Failed to get video status');
   return response.json();
 }
+
+export async function fetchNotifications() {
+  const response = await fetch('/api/notifications');
+  if (!response.ok) throw new Error('Failed to fetch notifications');
+  return response.json();
+}
+
+export async function markNotificationsRead() {
+  const response = await fetch('/api/notifications/read', {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Failed to mark notifications as read');
+  return response.json();
+}
+
+export async function subscribe(creatorId: number) {
+  const response = await fetch(`/api/subscribe/${creatorId}`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Failed to subscribe');
+  return response.json();
+}
+
+export async function unsubscribe(creatorId: number) {
+  const response = await fetch(`/api/unsubscribe/${creatorId}`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw new Error('Failed to unsubscribe');
+  return response.json();
+}
+
+export async function getSubscriptionStatus(creatorId: number) {
+  const response = await fetch(`/api/subscription/${creatorId}/status`);
+  if (!response.ok) throw new Error('Failed to get subscription status');
+  return response.json();
+}

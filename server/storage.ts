@@ -1,9 +1,11 @@
 import { 
-  users, videos, upvotes, comments,
+  users, videos, upvotes, comments, subscriptions, notifications,
   type User, type InsertUser,
   type Video, type InsertVideo,
   type Upvote, type InsertUpvote,
-  type Comment, type InsertComment
+  type Comment, type InsertComment,
+  type Subscription, type InsertSubscription,
+  type Notification, type InsertNotification
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -41,6 +43,16 @@ export interface IStorage {
   // Leaderboards
   getTopVideos(limit: number): Promise<Array<Video & { upvoteCount: number; author: User }>>;
   getTopCreators(limit: number): Promise<Array<User & { totalEarnings: number; videoCount: number }>>;
+  
+  // Subscriptions
+  createSubscription(subscriberId: number, creatorId: number): Promise<Subscription>;
+  deleteSubscription(subscriberId: number, creatorId: number): Promise<void>;
+  hasSubscribed(subscriberId: number, creatorId: number): Promise<boolean>;
+  
+  // Notifications
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationsRead(userId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -211,6 +223,53 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
 
     return results.map(r => ({ ...r.user, totalEarnings: r.totalEarnings || 0, videoCount: r.videoCount || 0 }));
+  }
+
+  // Subscriptions
+  async createSubscription(subscriberId: number, creatorId: number): Promise<Subscription> {
+    const [subscription] = await db
+      .insert(subscriptions)
+      .values({ subscriberId, creatorId })
+      .returning();
+    return subscription;
+  }
+
+  async deleteSubscription(subscriberId: number, creatorId: number): Promise<void> {
+    await db
+      .delete(subscriptions)
+      .where(and(eq(subscriptions.subscriberId, subscriberId), eq(subscriptions.creatorId, creatorId)));
+  }
+
+  async hasSubscribed(subscriberId: number, creatorId: number): Promise<boolean> {
+    const [result] = await db
+      .select()
+      .from(subscriptions)
+      .where(and(eq(subscriptions.subscriberId, subscriberId), eq(subscriptions.creatorId, creatorId)));
+    return !!result;
+  }
+
+  // Notifications
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [notif] = await db
+      .insert(notifications)
+      .values(notification)
+      .returning();
+    return notif;
+  }
+
+  async markNotificationsRead(userId: number): Promise<void> {
+    await db
+      .update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, userId));
   }
 }
 

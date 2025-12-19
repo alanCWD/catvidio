@@ -456,5 +456,111 @@ export async function registerRoutes(
     }
   });
 
+  // ========== NOTIFICATION ROUTES ==========
+  
+  // Get notifications for current user
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const userId = 1; // Mock user ID
+      const notifs = await storage.getNotificationsByUser(userId);
+      
+      // Format timestamps for display
+      const formatted = notifs.map(n => ({
+        ...n,
+        timestamp: formatTimeAgo(n.createdAt),
+      }));
+      
+      res.json(formatted);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.post("/api/notifications/read", async (req, res) => {
+    try {
+      const userId = 1; // Mock user ID
+      await storage.markNotificationsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notifications as read" });
+    }
+  });
+
+  // ========== SUBSCRIPTION ROUTES ==========
+  
+  // Subscribe to a creator
+  app.post("/api/subscribe/:creatorId", async (req, res) => {
+    try {
+      const subscriberId = 1; // Mock user ID
+      const creatorId = parseInt(req.params.creatorId);
+      
+      if (subscriberId === creatorId) {
+        return res.status(400).json({ error: "Cannot subscribe to yourself" });
+      }
+      
+      const alreadySubscribed = await storage.hasSubscribed(subscriberId, creatorId);
+      if (alreadySubscribed) {
+        return res.status(400).json({ error: "Already subscribed" });
+      }
+      
+      await storage.createSubscription(subscriberId, creatorId);
+      
+      // Create notification for the creator
+      const subscriber = await storage.getUser(subscriberId);
+      await storage.createNotification({
+        userId: creatorId,
+        type: "new_subscriber",
+        message: `🎉 @${subscriber?.username || 'Someone'} just subscribed to your channel!`,
+      });
+      
+      res.json({ subscribed: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to subscribe" });
+    }
+  });
+
+  // Unsubscribe from a creator
+  app.post("/api/unsubscribe/:creatorId", async (req, res) => {
+    try {
+      const subscriberId = 1; // Mock user ID
+      const creatorId = parseInt(req.params.creatorId);
+      
+      await storage.deleteSubscription(subscriberId, creatorId);
+      res.json({ subscribed: false });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to unsubscribe" });
+    }
+  });
+
+  // Check subscription status
+  app.get("/api/subscription/:creatorId/status", async (req, res) => {
+    try {
+      const subscriberId = 1; // Mock user ID
+      const creatorId = parseInt(req.params.creatorId);
+      
+      const isSubscribed = await storage.hasSubscribed(subscriberId, creatorId);
+      res.json({ subscribed: isSubscribed });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check subscription status" });
+    }
+  });
+
   return httpServer;
+}
+
+// Helper function to format time ago
+function formatTimeAgo(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = now.getTime() - dateObj.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return dateObj.toLocaleDateString();
 }
