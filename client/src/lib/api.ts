@@ -4,6 +4,49 @@ export async function fetchVideos() {
   return response.json();
 }
 
+export async function fetchYouTubeChannelVideos() {
+  const response = await fetch('/api/youtube/channel-videos');
+  if (!response.ok) throw new Error('Failed to fetch YouTube channel videos');
+  return response.json();
+}
+
+export async function fetchAllVideos() {
+  try {
+    const [localVideos, youtubeVideos] = await Promise.all([
+      fetchVideos().catch(() => []),
+      fetchYouTubeChannelVideos().catch(() => []),
+    ]);
+    
+    const localYoutubeIds = new Set(localVideos.map((v: any) => v.youtubeId));
+    
+    const formattedYoutubeVideos = youtubeVideos
+      .filter((v: any) => !localYoutubeIds.has(v.youtubeId))
+      .map((v: any) => ({
+        id: `yt-${v.youtubeId}`,
+        youtubeId: v.youtubeId,
+        title: v.title,
+        description: v.description,
+        thumbnail: v.thumbnail,
+        views: v.viewCount || 0,
+        uploadedAt: v.publishedAt,
+        type: 'video',
+        upvoteCount: v.likeCount || 0,
+        commentCount: v.commentCount || 0,
+        author: {
+          username: v.channelTitle || 'CatVid io',
+          avatar: null,
+          avatarColor: '#FF0055',
+        },
+        isYouTubeOnly: true,
+      }));
+    
+    return [...localVideos, ...formattedYoutubeVideos];
+  } catch (error) {
+    console.error('Error fetching all videos:', error);
+    return fetchVideos();
+  }
+}
+
 export async function fetchVideo(id: number) {
   const response = await fetch(`/api/videos/${id}`);
   if (!response.ok) throw new Error('Failed to fetch video');

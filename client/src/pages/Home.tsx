@@ -4,7 +4,7 @@ import { ShortsShelf } from "@/components/ShortsShelf";
 import { Search, Bell, Cast, X, Tv2, Smartphone, Laptop } from "lucide-react";
 import { Logo } from "@/components/Branding";
 import { useState, useEffect, useRef } from "react";
-import { fetchVideos, fetchNotifications, markNotificationsRead } from "@/lib/api";
+import { fetchAllVideos, fetchNotifications, markNotificationsRead } from "@/lib/api";
 import { formatVideoForComponent } from "@/lib/format";
 
 const CAT_HASHTAGS = [
@@ -32,7 +32,7 @@ export default function Home() {
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchVideos()
+    fetchAllVideos()
       .then(data => {
         const formatted = data.map(formatVideoForComponent);
         setVideos(formatted);
