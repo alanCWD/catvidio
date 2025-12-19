@@ -1,5 +1,5 @@
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical, Play } from "lucide-react";
+import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical, Play, Youtube } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { fetchVideos } from "@/lib/api";
@@ -142,12 +142,27 @@ export default function ShortsPlayer() {
 
             {/* Bottom Meta Info */}
             <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-zinc-700 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <div className="w-8 h-8 bg-zinc-700 rounded-full overflow-hidden flex-shrink-0">
                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${typeof video.author === 'object' ? video.author.username : video.author}`} />
                 </div>
                 <span className="font-bold text-sm">@{typeof video.author === 'object' ? video.author.username : video.author}</span>
-                <button className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full">Subscribe</button>
+                <button 
+                  className="bg-white text-black text-xs font-bold px-3 py-1.5 rounded-full"
+                  data-testid="button-subscribe-creator"
+                >
+                  Follow
+                </button>
+                <a 
+                  href="https://www.youtube.com/@catvidioapp?sub_confirmation=1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-red-600 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1"
+                  data-testid="button-subscribe-youtube"
+                >
+                  <Youtube size={14} />
+                  Subscribe
+                </a>
               </div>
               <h2 className="text-sm font-medium line-clamp-2 w-[85%]">{video.title}</h2>
             </div>
