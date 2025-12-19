@@ -21,7 +21,10 @@ export async function fetchAllVideos() {
     
     const formattedYoutubeVideos = youtubeVideos
       .filter((v: any) => !localYoutubeIds.has(v.youtubeId))
-      .map((v: any) => ({
+      .map((v: any) => {
+        const isLarryTheKat = v.title?.toLowerCase().includes('larry');
+        const type = isLarryTheKat ? 'video' : (v.isShort ? 'short' : 'video');
+        return {
         id: `yt-${v.youtubeId}`,
         youtubeId: v.youtubeId,
         title: v.title,
@@ -29,7 +32,7 @@ export async function fetchAllVideos() {
         thumbnail: v.thumbnail,
         views: v.viewCount || 0,
         uploadedAt: v.publishedAt,
-        type: v.isShort ? 'short' : 'video',
+        type,
         upvoteCount: v.likeCount || 0,
         commentCount: v.commentCount || 0,
         author: {
@@ -38,7 +41,8 @@ export async function fetchAllVideos() {
           avatarColor: '#FF0055',
         },
         isYouTubeOnly: true,
-      }));
+        };
+      });
     
     return [...localVideos, ...formattedYoutubeVideos];
   } catch (error) {
