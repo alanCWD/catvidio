@@ -29,7 +29,7 @@ export async function fetchAllVideos() {
         thumbnail: v.thumbnail,
         views: v.viewCount || 0,
         uploadedAt: v.publishedAt,
-        type: 'video',
+        type: v.isShort ? 'short' : 'video',
         upvoteCount: v.likeCount || 0,
         commentCount: v.commentCount || 0,
         author: {

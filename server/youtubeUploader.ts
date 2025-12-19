@@ -49,6 +49,18 @@ class YouTubeUploader {
     this.initialize();
   }
 
+  // Parse ISO 8601 duration (e.g., "PT1M30S" = 90 seconds)
+  private parseDuration(duration: string): number {
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!match) return 0;
+    
+    const hours = parseInt(match[1] || '0');
+    const minutes = parseInt(match[2] || '0');
+    const seconds = parseInt(match[3] || '0');
+    
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+
   private initialize() {
     const clientId = process.env.YOUTUBE_CLIENT_ID;
     const clientSecret = process.env.YOUTUBE_CLIENT_SECRET;
@@ -256,18 +268,23 @@ class YouTubeUploader {
       const videoIds = playlistResponse.data.items.map((item: any) => item.contentDetails.videoId);
       
       const videosResponse = await this.youtube.videos.list({
-        part: ['snippet', 'statistics', 'status'],
+        part: ['snippet', 'statistics', 'status', 'contentDetails'],
         id: videoIds.join(',')
       });
 
       const videoDetails = new Map();
       if (videosResponse.data.items) {
         videosResponse.data.items.forEach((video: any) => {
+          const duration = video.contentDetails?.duration || 'PT0S';
+          const durationSeconds = this.parseDuration(duration);
+          
           videoDetails.set(video.id, {
             viewCount: parseInt(video.statistics?.viewCount || '0'),
             likeCount: parseInt(video.statistics?.likeCount || '0'),
             commentCount: parseInt(video.statistics?.commentCount || '0'),
-            privacyStatus: video.status?.privacyStatus
+            privacyStatus: video.status?.privacyStatus,
+            durationSeconds,
+            isShort: durationSeconds <= 60
           });
         });
       }
@@ -290,6 +307,7 @@ class YouTubeUploader {
           likeCount: details.likeCount || 0,
           commentCount: details.commentCount || 0,
           privacyStatus: details.privacyStatus || 'unknown',
+          isShort: details.isShort || false,
           url: `https://www.youtube.com/watch?v=${videoId}`
         };
       });
