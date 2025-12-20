@@ -1,5 +1,5 @@
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical, Play, Youtube, X, Send } from "lucide-react";
+import { ArrowLeft, ThumbsUp, MessageSquare, Share2, MoreVertical, Play, Youtube, X, Send, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fetchAllVideos, fetchComments, createComment } from "@/lib/api";
 import { formatVideoForComponent } from "@/lib/format";
@@ -19,6 +19,7 @@ export default function ShortsPlayer() {
   const [comments, setComments] = useState<any[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     fetchAllVideos()
@@ -191,7 +192,8 @@ export default function ShortsPlayer() {
             <div className="w-full h-full relative">
               {index === activeIndex ? (
                 <iframe
-                  src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&loop=1&playlist=${video.youtubeId}&mute=0`}
+                  key={`${video.youtubeId}-${isMuted}`}
+                  src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&loop=1&playlist=${video.youtubeId}&mute=${isMuted ? 1 : 0}`}
                   title={video.title}
                   className="w-full h-full object-cover pointer-events-none"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -214,6 +216,15 @@ export default function ShortsPlayer() {
               {/* Overlay for touch events if needed */}
               <div className="absolute inset-0 bg-transparent z-10" />
             </div>
+
+            {/* Mute/Unmute Button - Top Right */}
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className="absolute top-20 right-3 z-30 bg-zinc-800/80 p-3 rounded-full backdrop-blur-sm"
+              data-testid="button-toggle-mute"
+            >
+              {isMuted ? <VolumeX size={22} /> : <Volume2 size={22} />}
+            </button>
 
             {/* Right Side Actions */}
             <div className="absolute right-2 bottom-32 z-20 flex flex-col gap-6 items-center">
