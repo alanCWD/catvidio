@@ -2,11 +2,12 @@ import { Link, useLocation } from "wouter";
 import { ZoomiesLogo, HomeNavIcon, SubscriptionsNavIcon, UploadNavIcon } from "@/components/Branding";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCurrentUser } from "@/lib/api";
+import { User } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   
-  const { data: user } = useQuery({
+  const { data: user, isLoading } = useQuery({
     queryKey: ["currentUser"],
     queryFn: fetchCurrentUser,
     staleTime: 30000,
@@ -45,17 +46,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="text-[10px] font-normal">Subscriptions</span>
         </Link>
 
-        <Link href="/profile" className={`flex flex-col items-center gap-1 w-full py-1 ${isActive("/profile") ? "text-foreground" : "text-foreground"}`}>
-          <div 
-            className="w-7 h-7 rounded-full p-[2px]" 
-            style={{ backgroundColor: user?.avatarColor || "#FF0055" }}
-          >
-            <div className="w-full h-full rounded-full overflow-hidden bg-background">
-              <img src={user?.avatar || "/api/placeholder-cat.jpg"} alt="You" className="w-full h-full object-cover" />
+        {user ? (
+          <Link href="/profile" className={`flex flex-col items-center gap-1 w-full py-1 ${isActive("/profile") ? "text-foreground" : "text-foreground"}`}>
+            <div 
+              className="w-7 h-7 rounded-full p-[2px]" 
+              style={{ backgroundColor: user.avatarColor || "#FF0055" }}
+            >
+              <div className="w-full h-full rounded-full overflow-hidden bg-background">
+                {user.avatar ? (
+                  <img src={user.avatar} alt="You" className="w-full h-full object-cover" />
+                ) : (
+                  <img 
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username || 'user'}`} 
+                    alt="You" 
+                    className="w-full h-full object-cover bg-muted" 
+                  />
+                )}
+              </div>
             </div>
-          </div>
-          <span className="text-[10px] font-normal">You</span>
-        </Link>
+            <span className="text-[10px] font-normal">You</span>
+          </Link>
+        ) : (
+          <a href="/api/login" className="flex flex-col items-center gap-1 w-full py-1" data-testid="button-sign-in">
+            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+              <User size={16} className="text-muted-foreground" />
+            </div>
+            <span className="text-[10px] font-normal">Sign in</span>
+          </a>
+        )}
       </nav>
     </div>
   );
