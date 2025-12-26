@@ -29,6 +29,7 @@ export async function fetchAllVideos() {
     const formattedYoutubeVideos = youtubeVideos
       .filter((v: any) => !localYoutubeIds.has(v.youtubeId))
       .map((v: any) => {
+        // Videos ≤60s are shorts, unless explicitly marked as wide video
         const isLarryTheKat = v.title?.toLowerCase() === 'larry the kat';
         const type = isLarryTheKat ? 'video' : (v.isShort ? 'short' : 'video');
         

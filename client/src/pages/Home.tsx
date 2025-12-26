@@ -36,22 +36,16 @@ export default function Home() {
       .then(data => {
         const formatted = data.map(formatVideoForComponent);
         
-        // Sort videos: wide videos first (sorted by views/recency), then shorts
-        // Also prioritize "Larry The Kat" as the hero video
+        // Sort videos: wide videos first (sorted by most recent), then shorts (also by most recent)
         const sorted = formatted.sort((a: any, b: any) => {
           // Wide videos come before shorts
           if (a.type === 'video' && b.type === 'short') return -1;
           if (a.type === 'short' && b.type === 'video') return 1;
           
-          // Within wide videos, prioritize "Larry The Kat" (exact match) as hero
-          if (a.type === 'video' && b.type === 'video') {
-            const aIsLarry = a.title?.toLowerCase() === 'larry the kat';
-            const bIsLarry = b.title?.toLowerCase() === 'larry the kat';
-            if (aIsLarry && !bIsLarry) return -1;
-            if (!aIsLarry && bIsLarry) return 1;
-          }
-          
-          return 0;
+          // Within same type, sort by upload date (most recent first)
+          const dateA = new Date(a.uploadedAt || 0).getTime();
+          const dateB = new Date(b.uploadedAt || 0).getTime();
+          return dateB - dateA;
         });
         
         setVideos(sorted);
