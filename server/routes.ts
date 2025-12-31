@@ -119,6 +119,11 @@ export async function registerRoutes(
   
   // Get all videos with stats
   app.get("/api/videos", async (req, res) => {
+    // Prevent caching to ensure fresh data
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const allVideos = await storage.getAllVideos();
       
@@ -441,6 +446,11 @@ export async function registerRoutes(
 
   // Get videos from YouTube channel (works in both dev and production)
   app.get("/api/youtube/channel-videos", async (req, res) => {
+    // Prevent caching to ensure fresh data
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const maxResults = parseInt(req.query.maxResults as string) || 50;
       const videos = await youtubeUploader.getChannelVideos(maxResults);
@@ -630,6 +640,11 @@ export async function registerRoutes(
   
   // Get all YouTube video to creator mappings
   app.get("/api/youtube-video-creators", async (req, res) => {
+    // Prevent caching to ensure fresh data
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    
     try {
       const mappings = await storage.getAllYoutubeVideoCreators();
       res.json(mappings);
