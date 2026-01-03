@@ -289,13 +289,28 @@ class YouTubeUploader {
           const duration = video.contentDetails?.duration || 'PT0S';
           const durationSeconds = this.parseDuration(duration);
           
+          // Detect aspect ratio from thumbnails - Shorts have vertical thumbnails (height > width)
+          const thumbnails = video.snippet?.thumbnails;
+          let isVertical = false;
+          
+          // Check maxres, high, or medium thumbnail for dimensions
+          const thumb = thumbnails?.maxres || thumbnails?.high || thumbnails?.medium || thumbnails?.default;
+          if (thumb && thumb.width && thumb.height) {
+            isVertical = thumb.height > thumb.width;
+          }
+          
+          // A Short is a vertical video (portrait aspect ratio)
+          // Duration is not the primary factor - aspect ratio is
+          const isShort = isVertical;
+          
           videoDetails.set(video.id, {
             viewCount: parseInt(video.statistics?.viewCount || '0'),
             likeCount: parseInt(video.statistics?.likeCount || '0'),
             commentCount: parseInt(video.statistics?.commentCount || '0'),
             privacyStatus: video.status?.privacyStatus,
             durationSeconds,
-            isShort: durationSeconds <= 60
+            isShort,
+            isVertical
           });
         });
       }
@@ -319,6 +334,7 @@ class YouTubeUploader {
           commentCount: details.commentCount || 0,
           privacyStatus: details.privacyStatus || 'unknown',
           isShort: details.isShort || false,
+          isVertical: details.isVertical || false,
           url: `https://www.youtube.com/watch?v=${videoId}`
         };
       });

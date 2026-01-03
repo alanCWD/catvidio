@@ -29,9 +29,9 @@ export async function fetchAllVideos() {
     const formattedYoutubeVideos = youtubeVideos
       .filter((v: any) => !localYoutubeIds.has(v.youtubeId))
       .map((v: any) => {
-        // Videos ≤60s are shorts, unless explicitly marked as wide video
-        const isLarryTheKat = v.title?.toLowerCase() === 'larry the kat';
-        const type = isLarryTheKat ? 'video' : (v.isShort ? 'short' : 'video');
+        // Video type is determined by aspect ratio (isShort = vertical video = Zoomie)
+        // Horizontal/landscape videos show as wide format, vertical videos show as Zoomies
+        const type = v.isShort ? 'short' : 'video';
         
         // Check if this video has a creator assigned
         const assignedCreator = creatorMap.get(v.youtubeId);
