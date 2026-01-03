@@ -285,23 +285,10 @@ class YouTubeUploader {
 
       const videoDetails = new Map();
       if (videosResponse.data.items) {
-        videosResponse.data.items.forEach((video: any) => {
+        // First pass: store basic video info
+        for (const video of videosResponse.data.items) {
           const duration = video.contentDetails?.duration || 'PT0S';
           const durationSeconds = this.parseDuration(duration);
-          
-          // Detect aspect ratio from thumbnails - Shorts have vertical thumbnails (height > width)
-          const thumbnails = video.snippet?.thumbnails;
-          let isVertical = false;
-          
-          // Check maxres, high, or medium thumbnail for dimensions
-          const thumb = thumbnails?.maxres || thumbnails?.high || thumbnails?.medium || thumbnails?.default;
-          if (thumb && thumb.width && thumb.height) {
-            isVertical = thumb.height > thumb.width;
-          }
-          
-          // A Short is a vertical video (portrait aspect ratio)
-          // Duration is not the primary factor - aspect ratio is
-          const isShort = isVertical;
           
           videoDetails.set(video.id, {
             viewCount: parseInt(video.statistics?.viewCount || '0'),
@@ -309,10 +296,43 @@ class YouTubeUploader {
             commentCount: parseInt(video.statistics?.commentCount || '0'),
             privacyStatus: video.status?.privacyStatus,
             durationSeconds,
-            isShort,
-            isVertical
+            isShort: false,
+            isVertical: false
           });
+        }
+        
+        // Second pass: detect Shorts using HTTP request to YouTube
+        // YouTube returns 200 for Shorts, 303/302 for regular videos (redirect to /watch)
+        const shortDetectionPromises = videosResponse.data.items.map(async (video: any) => {
+          const videoId = video.id;
+          try {
+            const response = await fetch(`https://www.youtube.com/shorts/${videoId}`, {
+              method: 'HEAD',
+              redirect: 'manual',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+              }
+            });
+            // 200 = Short, 303/302 = redirect to regular video
+            const isShort = response.status === 200;
+            const details = videoDetails.get(videoId);
+            if (details) {
+              details.isShort = isShort;
+              details.isVertical = isShort;
+            }
+            console.log(`Video ${videoId}: isShort=${isShort} (HTTP status: ${response.status})`);
+          } catch (error) {
+            console.log(`Failed to detect Short status for ${videoId}, using duration fallback`);
+            // Fallback: use duration <= 60s as a heuristic
+            const details = videoDetails.get(videoId);
+            if (details && details.durationSeconds <= 60) {
+              // Keep as regular video unless we have a strong signal it's vertical
+              details.isShort = false;
+            }
+          }
         });
+        
+        await Promise.all(shortDetectionPromises);
       }
 
       return playlistResponse.data.items.map((item: any) => {
