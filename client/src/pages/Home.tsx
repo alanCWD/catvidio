@@ -92,9 +92,32 @@ export default function Home() {
   const wideVideos = videos.filter(v => v.type === 'video');
   const shorts = videos.filter(v => v.type === 'short');
 
-  // Logic: First wide video -> Shorts Shelf -> Remaining wide videos
-  const firstVideo = wideVideos[0];
-  const remainingVideos = wideVideos.slice(1);
+  // Build alternating pattern: 1 wide -> 4 zoomies -> 1 wide -> 4 zoomies -> ...
+  // Returns an array of content blocks to render
+  const buildContentBlocks = () => {
+    const blocks: { type: 'wide' | 'zoomies', data: any }[] = [];
+    let wideIndex = 0;
+    let shortsIndex = 0;
+    
+    while (wideIndex < wideVideos.length || shortsIndex < shorts.length) {
+      // Add one wide video if available
+      if (wideIndex < wideVideos.length) {
+        blocks.push({ type: 'wide', data: wideVideos[wideIndex] });
+        wideIndex++;
+      }
+      
+      // Add up to 4 shorts as a shelf if available
+      if (shortsIndex < shorts.length) {
+        const shortsSlice = shorts.slice(shortsIndex, shortsIndex + 4);
+        blocks.push({ type: 'zoomies', data: shortsSlice });
+        shortsIndex += 4;
+      }
+    }
+    
+    return blocks;
+  };
+  
+  const contentBlocks = buildContentBlocks();
 
   if (loading) {
     return (
@@ -267,12 +290,10 @@ export default function Home() {
 
         {/* Content Feed */}
         <div className="pt-2">
-          {firstVideo && <WideVideoCard video={firstVideo} />}
-          
-          <ShortsShelf shorts={shorts} />
-          
-          {remainingVideos.map(video => (
-            <WideVideoCard key={video.id} video={video} />
+          {contentBlocks.map((block, index) => (
+            block.type === 'wide' 
+              ? <WideVideoCard key={`wide-${block.data.id}`} video={block.data} />
+              : <ShortsShelf key={`zoomies-${index}`} shorts={block.data} />
           ))}
         </div>
       </div>

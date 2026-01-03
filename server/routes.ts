@@ -454,7 +454,9 @@ export async function registerRoutes(
     try {
       const maxResults = parseInt(req.query.maxResults as string) || 50;
       const videos = await youtubeUploader.getChannelVideos(maxResults);
-      res.json(videos);
+      // Filter to only return public videos (exclude private and unlisted)
+      const publicVideos = videos.filter((v: any) => v.privacyStatus === 'public');
+      res.json(publicVideos);
     } catch (error: any) {
       console.error('Error fetching channel videos:', error);
       res.status(500).json({ error: "Failed to fetch channel videos" });

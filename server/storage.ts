@@ -102,7 +102,8 @@ export class DatabaseStorage implements IStorage {
 
   // Videos
   async getAllVideos(): Promise<Video[]> {
-    return await db.select().from(videos).orderBy(desc(videos.uploadedAt));
+    // Only return approved videos (exclude pending, processing, failed, etc.)
+    return await db.select().from(videos).where(eq(videos.status, 'approved')).orderBy(desc(videos.uploadedAt));
   }
 
   async getVideo(id: number): Promise<Video | undefined> {
