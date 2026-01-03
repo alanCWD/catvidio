@@ -9,7 +9,7 @@ import {
   type YoutubeVideoCreator, type InsertYoutubeVideoCreator
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, or } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -102,8 +102,10 @@ export class DatabaseStorage implements IStorage {
 
   // Videos
   async getAllVideos(): Promise<Video[]> {
-    // Only return approved videos (exclude pending, processing, failed, etc.)
-    return await db.select().from(videos).where(eq(videos.status, 'approved')).orderBy(desc(videos.uploadedAt));
+    // Return videos that are either uploaded or approved (exclude pending, processing, failed)
+    return await db.select().from(videos).where(
+      or(eq(videos.status, 'uploaded'), eq(videos.status, 'approved'))
+    ).orderBy(desc(videos.uploadedAt));
   }
 
   async getVideo(id: number): Promise<Video | undefined> {
