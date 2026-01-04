@@ -117,15 +117,27 @@ export async function registerRoutes(
 
   // ========== VIDEO ROUTES ==========
   
-  // Helper function to sync video types from YouTube
+  // Helper function to sync video types and privacy from YouTube
   // Uses HEAD request with redirect: manual - status 200 = Short, 302/303 = regular video
+  // Also syncs privacy status from YouTube API
   async function syncVideoTypesFromYouTube(videos: any[]) {
     const videosWithYoutubeId = videos.filter(v => v.youtubeId);
     if (videosWithYoutubeId.length === 0) return;
     
-    // Check each video's type against YouTube
+    // Get fresh data from YouTube API for privacy status
+    let youtubeVideos: any[] = [];
+    try {
+      youtubeVideos = await youtubeUploader.getChannelVideos(100);
+    } catch (error) {
+      console.error('[sync] Failed to fetch YouTube videos for privacy sync:', error);
+    }
+    const youtubeVideoMap = new Map(youtubeVideos.map(v => [v.youtubeId, v]));
+    
+    // Check each video's type and privacy against YouTube
     const syncPromises = videosWithYoutubeId.map(async (video) => {
       try {
+        const updates: any = {};
+        
         // HEAD request with manual redirect - same approach as getChannelVideos
         const response = await fetch(`https://www.youtube.com/shorts/${video.youtubeId}`, {
           method: 'HEAD',
@@ -139,11 +151,24 @@ export async function registerRoutes(
         const isShort = response.status === 200;
         const correctType = isShort ? 'short' : 'video';
         
-        // Update if type is wrong
         if (video.type !== correctType) {
-          console.log(`[sync] Updating video "${video.title}" (${video.youtubeId}) from type="${video.type}" to type="${correctType}" (HTTP status: ${response.status})`);
-          await storage.updateVideo(video.id, { type: correctType });
-          video.type = correctType; // Update in-memory too
+          console.log(`[sync] Updating video "${video.title}" (${video.youtubeId}) type: "${video.type}" -> "${correctType}"`);
+          updates.type = correctType;
+          video.type = correctType;
+        }
+        
+        // Sync privacy status from YouTube API data
+        const ytVideo = youtubeVideoMap.get(video.youtubeId);
+        if (ytVideo && ytVideo.privacyStatus) {
+          if (video.privacyStatus !== ytVideo.privacyStatus) {
+            console.log(`[sync] Updating video "${video.title}" (${video.youtubeId}) privacy: "${video.privacyStatus}" -> "${ytVideo.privacyStatus}"`);
+            updates.privacyStatus = ytVideo.privacyStatus;
+            video.privacyStatus = ytVideo.privacyStatus;
+          }
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await storage.updateVideo(video.id, updates);
         }
       } catch (error) {
         console.error(`[sync] Error checking video ${video.youtubeId}:`, error);
@@ -163,12 +188,17 @@ export async function registerRoutes(
     try {
       const allVideos = await storage.getAllVideos();
       
-      // Sync video types from YouTube (await to ensure correct types are returned)
+      // Sync video types and privacy from YouTube (await to ensure correct data is returned)
       await syncVideoTypesFromYouTube(allVideos);
+      
+      // Filter to only public videos (exclude private and unlisted)
+      const publicVideos = allVideos.filter((video: any) => 
+        !video.privacyStatus || video.privacyStatus === 'public'
+      );
       
       // Fetch stats for each video
       const videosWithStats = await Promise.all(
-        allVideos.map(async (video) => {
+        publicVideos.map(async (video) => {
           const upvoteCount = await storage.getUpvoteCount(video.id);
           const comments = await storage.getCommentsByVideo(video.id);
           const author = await storage.getUser(video.userId);

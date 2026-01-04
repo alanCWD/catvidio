@@ -39,6 +39,7 @@ export const videos = pgTable("videos", {
   title: varchar("title", { length: 200 }).notNull(),
   description: text("description"),
   type: varchar("type", { length: 10 }).notNull().default("video"), // 'video' or 'short'
+  privacyStatus: varchar("privacy_status", { length: 20 }).default("public"), // 'public', 'private', 'unlisted'
   thumbnail: text("thumbnail"),
   views: integer("views").default(0),
   earnings: integer("earnings").default(0), // Stored in cents
