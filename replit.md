@@ -47,6 +47,7 @@ Preferred communication style: Simple, everyday language.
 - **YouTube Data API v3**: OAuth2 flow for uploading processed videos to YouTube AND fetching channel videos
   - `GET /api/youtube/channel-videos` - Fetches all videos from the connected YouTube channel (works in both dev and production)
 - **Video Processing Pipeline**: Raw upload → FFmpeg processing (resize, add intro/outro) → YouTube upload
+- **Video Type Sync**: Automatic sync on `/api/videos` that detects Shorts vs regular videos using HEAD requests to `youtube.com/shorts/{id}` with `redirect: manual`. HTTP 200 = Short, 302/303 = regular video. Updates database if mismatch detected.
 
 ### Build & Deployment
 - **Development**: Vite dev server on port 5000 with HMR
