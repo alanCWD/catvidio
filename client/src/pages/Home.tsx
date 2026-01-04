@@ -91,6 +91,15 @@ export default function Home() {
 
   const wideVideos = videos.filter(v => v.type === 'video');
   const shorts = videos.filter(v => v.type === 'short');
+  
+  // Debug logging for production troubleshooting
+  if (videos.length > 0) {
+    console.log('[catvid.io] Video types breakdown:');
+    console.log('  Total videos:', videos.length);
+    console.log('  Wide (type=video):', wideVideos.length, wideVideos.map(v => v.title));
+    console.log('  Shorts (type=short):', shorts.length);
+    videos.forEach(v => console.log(`  - "${v.title}" type="${v.type}" isYouTubeOnly=${v.isYouTubeOnly || false}`));
+  }
 
   // Build alternating pattern: 1 wide -> 4 zoomies -> 1 wide -> 4 zoomies -> ...
   // Returns an array of content blocks to render
