@@ -117,6 +117,42 @@ export async function registerRoutes(
 
   // ========== VIDEO ROUTES ==========
   
+  // Helper function to sync video types from YouTube
+  // Uses HEAD request with redirect: manual - status 200 = Short, 302/303 = regular video
+  async function syncVideoTypesFromYouTube(videos: any[]) {
+    const videosWithYoutubeId = videos.filter(v => v.youtubeId);
+    if (videosWithYoutubeId.length === 0) return;
+    
+    // Check each video's type against YouTube
+    const syncPromises = videosWithYoutubeId.map(async (video) => {
+      try {
+        // HEAD request with manual redirect - same approach as getChannelVideos
+        const response = await fetch(`https://www.youtube.com/shorts/${video.youtubeId}`, {
+          method: 'HEAD',
+          redirect: 'manual',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+        
+        // 200 = Short (vertical), 302/303 = Regular video (horizontal)
+        const isShort = response.status === 200;
+        const correctType = isShort ? 'short' : 'video';
+        
+        // Update if type is wrong
+        if (video.type !== correctType) {
+          console.log(`[sync] Updating video "${video.title}" (${video.youtubeId}) from type="${video.type}" to type="${correctType}" (HTTP status: ${response.status})`);
+          await storage.updateVideo(video.id, { type: correctType });
+          video.type = correctType; // Update in-memory too
+        }
+      } catch (error) {
+        console.error(`[sync] Error checking video ${video.youtubeId}:`, error);
+      }
+    });
+    
+    await Promise.all(syncPromises);
+  }
+  
   // Get all videos with stats
   app.get("/api/videos", async (req, res) => {
     // Prevent caching to ensure fresh data
@@ -126,6 +162,9 @@ export async function registerRoutes(
     
     try {
       const allVideos = await storage.getAllVideos();
+      
+      // Sync video types from YouTube (await to ensure correct types are returned)
+      await syncVideoTypesFromYouTube(allVideos);
       
       // Fetch stats for each video
       const videosWithStats = await Promise.all(
