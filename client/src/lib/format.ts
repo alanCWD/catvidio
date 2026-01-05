@@ -37,6 +37,7 @@ export function formatVideoForComponent(video: any) {
     ...video,
     views: formatViews(video.views),
     uploaded: formatUploadTime(video.uploadedAt),
+    uploadedAt: video.uploadedAt, // Keep raw date for sorting
     earnings: formatEarnings(video.earnings),
     upvotes: video.upvoteCount || 0,
     comments: video.commentCount || 0,

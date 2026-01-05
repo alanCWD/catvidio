@@ -188,8 +188,10 @@ export async function registerRoutes(
     try {
       const allVideos = await storage.getAllVideos();
       
-      // Sync video types and privacy from YouTube (await to ensure correct data is returned)
-      await syncVideoTypesFromYouTube(allVideos);
+      // Sync video types and privacy from YouTube (non-blocking - don't fail if YouTube API is unavailable)
+      syncVideoTypesFromYouTube(allVideos).catch(err => {
+        console.log('[sync] YouTube sync skipped (API unavailable):', err.message || err);
+      });
       
       // Filter to only public videos (exclude private and unlisted)
       const publicVideos = allVideos.filter((video: any) => 

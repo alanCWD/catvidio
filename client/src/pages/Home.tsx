@@ -36,13 +36,9 @@ export default function Home() {
       .then(data => {
         const formatted = data.map(formatVideoForComponent);
         
-        // Sort videos: wide videos first (sorted by most recent), then shorts (also by most recent)
+        // Sort ALL videos by upload date (most recent first)
+        // The alternating pattern (1 wide, 4 zoomies) will be built from date-ordered lists
         const sorted = formatted.sort((a: any, b: any) => {
-          // Wide videos come before shorts
-          if (a.type === 'video' && b.type === 'short') return -1;
-          if (a.type === 'short' && b.type === 'video') return 1;
-          
-          // Within same type, sort by upload date (most recent first)
           const dateA = new Date(a.uploadedAt || 0).getTime();
           const dateB = new Date(b.uploadedAt || 0).getTime();
           return dateB - dateA;
@@ -89,6 +85,7 @@ export default function Home() {
     }
   };
 
+  // Separate videos by type, each already sorted by date from the main sort
   const wideVideos = videos.filter(v => v.type === 'video');
   const shorts = videos.filter(v => v.type === 'short');
   
@@ -97,12 +94,12 @@ export default function Home() {
     console.log('[catvid.io] Video types breakdown:');
     console.log('  Total videos:', videos.length);
     console.log('  Wide (type=video):', wideVideos.length, wideVideos.map(v => v.title));
-    console.log('  Shorts (type=short):', shorts.length);
-    videos.forEach(v => console.log(`  - "${v.title}" type="${v.type}" isYouTubeOnly=${v.isYouTubeOnly || false}`));
+    console.log('  Shorts (type=short):', shorts.length, shorts.map(v => v.title));
+    videos.forEach(v => console.log(`  - "${v.title}" type="${v.type}" uploadedAt="${v.uploadedAt}"`));
   }
 
   // Build alternating pattern: 1 wide -> 4 zoomies -> 1 wide -> 4 zoomies -> ...
-  // Returns an array of content blocks to render
+  // Both lists are already sorted by upload date (most recent first)
   const buildContentBlocks = () => {
     const blocks: { type: 'wide' | 'zoomies', data: any }[] = [];
     let wideIndex = 0;
