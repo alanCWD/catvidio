@@ -35,8 +35,9 @@ export default function CreateProfile() {
   }, [isLoading, isAuthenticated]);
 
   useEffect(() => {
-    if (user?.username) {
-      setName(user.username);
+    // Pre-fill name from auth user's first name if available
+    if (user?.firstName) {
+      setName(user.firstName);
     }
   }, [user]);
 

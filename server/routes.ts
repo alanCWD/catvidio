@@ -33,6 +33,15 @@ const upload = multer({
   }
 });
 
+// Helper to get the authenticated user's profile ID
+async function getAuthenticatedUserId(req: any): Promise<number | null> {
+  const authUserId = req.user?.claims?.sub;
+  if (!authUserId) return null;
+  
+  const user = await storage.getUserByAuthId(authUserId);
+  return user?.id ?? null;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -259,13 +268,17 @@ export async function registerRoutes(
   });
 
   // Upload video file for processing
-  app.post("/api/videos/upload", upload.single('video'), async (req, res) => {
+  app.post("/api/videos/upload", isAuthenticated, upload.single('video'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No video file provided" });
       }
 
-      const userId = 1; // Mock user ID
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(403).json({ error: "Please create your profile first", needsProfile: true });
+      }
+      
       const title = req.body.title || "Untitled Video";
       const description = req.body.description || "";
       const type = req.body.type || "short";
@@ -408,10 +421,13 @@ export async function registerRoutes(
   // ========== UPVOTE ROUTES ==========
   
   // Toggle upvote
-  app.post("/api/videos/:videoId/upvote", async (req, res) => {
+  app.post("/api/videos/:videoId/upvote", isAuthenticated, async (req: any, res) => {
     try {
       const videoId = parseInt(req.params.videoId);
-      const userId = 1; // Mock user ID for now
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(403).json({ error: "Please create your profile first", needsProfile: true });
+      }
       
       const hasUpvoted = await storage.hasUserUpvoted(userId, videoId);
       
@@ -430,14 +446,18 @@ export async function registerRoutes(
   });
 
   // Check if user has upvoted
-  app.get("/api/videos/:videoId/upvote/status", async (req, res) => {
+  app.get("/api/videos/:videoId/upvote/status", async (req: any, res) => {
     try {
       const videoId = parseInt(req.params.videoId);
-      const userId = 1; // Mock user ID
+      const userId = await getAuthenticatedUserId(req);
+      
+      const count = await storage.getUpvoteCount(videoId);
+      // If not logged in, return upvoted: false
+      if (!userId) {
+        return res.json({ upvoted: false, count });
+      }
       
       const hasUpvoted = await storage.hasUserUpvoted(userId, videoId);
-      const count = await storage.getUpvoteCount(videoId);
-      
       res.json({ upvoted: hasUpvoted, count });
     } catch (error) {
       res.status(500).json({ error: "Failed to check upvote status" });
@@ -458,10 +478,13 @@ export async function registerRoutes(
   });
 
   // Create comment
-  app.post("/api/videos/:videoId/comments", async (req, res) => {
+  app.post("/api/videos/:videoId/comments", isAuthenticated, async (req: any, res) => {
     try {
       const videoId = parseInt(req.params.videoId);
-      const userId = 1; // Mock user ID
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(403).json({ error: "Please create your profile first", needsProfile: true });
+      }
       
       const data = insertCommentSchema.parse({
         ...req.body,
@@ -578,9 +601,12 @@ export async function registerRoutes(
   // ========== NOTIFICATION ROUTES ==========
   
   // Get notifications for current user
-  app.get("/api/notifications", async (req, res) => {
+  app.get("/api/notifications", async (req: any, res) => {
     try {
-      const userId = 1; // Mock user ID
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.json([]); // Return empty array if not logged in
+      }
       const notifs = await storage.getNotificationsByUser(userId);
       
       // Format timestamps for display
@@ -596,9 +622,12 @@ export async function registerRoutes(
   });
 
   // Mark all notifications as read
-  app.post("/api/notifications/read", async (req, res) => {
+  app.post("/api/notifications/read", async (req: any, res) => {
     try {
-      const userId = 1; // Mock user ID
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.json({ success: true }); // No-op if not logged in
+      }
       await storage.markNotificationsRead(userId);
       res.json({ success: true });
     } catch (error) {
@@ -609,9 +638,12 @@ export async function registerRoutes(
   // ========== SUBSCRIPTION ROUTES ==========
   
   // Subscribe to a creator
-  app.post("/api/subscribe/:creatorId", async (req, res) => {
+  app.post("/api/subscribe/:creatorId", isAuthenticated, async (req: any, res) => {
     try {
-      const subscriberId = 1; // Mock user ID
+      const subscriberId = await getAuthenticatedUserId(req);
+      if (!subscriberId) {
+        return res.status(403).json({ error: "Please create your profile first", needsProfile: true });
+      }
       const creatorId = parseInt(req.params.creatorId);
       
       if (subscriberId === creatorId) {
@@ -640,9 +672,12 @@ export async function registerRoutes(
   });
 
   // Unsubscribe from a creator
-  app.post("/api/unsubscribe/:creatorId", async (req, res) => {
+  app.post("/api/unsubscribe/:creatorId", isAuthenticated, async (req: any, res) => {
     try {
-      const subscriberId = 1; // Mock user ID
+      const subscriberId = await getAuthenticatedUserId(req);
+      if (!subscriberId) {
+        return res.status(403).json({ error: "Please create your profile first", needsProfile: true });
+      }
       const creatorId = parseInt(req.params.creatorId);
       
       await storage.deleteSubscription(subscriberId, creatorId);
@@ -653,9 +688,12 @@ export async function registerRoutes(
   });
 
   // Check subscription status
-  app.get("/api/subscription/:creatorId/status", async (req, res) => {
+  app.get("/api/subscription/:creatorId/status", async (req: any, res) => {
     try {
-      const subscriberId = 1; // Mock user ID
+      const subscriberId = await getAuthenticatedUserId(req);
+      if (!subscriberId) {
+        return res.json({ subscribed: false }); // Not logged in = not subscribed
+      }
       const creatorId = parseInt(req.params.creatorId);
       
       const isSubscribed = await storage.hasSubscribed(subscriberId, creatorId);

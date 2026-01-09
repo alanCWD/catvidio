@@ -4,6 +4,7 @@ import { UploadCloud, CheckCircle2, Youtube, Video, Loader2, AlertCircle } from 
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { createVideo, fetchCurrentUser, uploadVideoFile, getVideoStatus } from "@/lib/api";
 
 type UploadMode = "file" | "youtube";
@@ -11,8 +12,10 @@ type UploadMode = "file" | "youtube";
 export default function Upload() {
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user: authUser, isLoading: authLoading, isAuthenticated } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [uploadMode, setUploadMode] = useState<UploadMode>("file");
   const [uploadStep, setUploadStep] = useState<"form" | "uploading" | "processing" | "done" | "error">("form");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -27,9 +30,38 @@ export default function Upload() {
     originalAudioOnly: true,
   });
 
+  // Check authentication and profile
   useEffect(() => {
-    fetchCurrentUser().then(setUser).catch(console.error);
-  }, []);
+    if (authLoading) return;
+    
+    if (!isAuthenticated) {
+      // Not logged in - redirect to login
+      window.location.href = "/api/login";
+      return;
+    }
+    
+    // Logged in - check for profile
+    fetchCurrentUser()
+      .then((profile) => {
+        if (profile) {
+          setUser(profile);
+          setProfileLoading(false);
+        } else {
+          // No profile - redirect to create profile
+          setProfileLoading(false);
+          setLocation("/create-profile");
+        }
+      })
+      .catch((err) => {
+        // Error fetching profile (likely 404 - no profile exists)
+        setProfileLoading(false);
+        toast({
+          title: "Create Profile",
+          description: "Please create your creator profile first",
+        });
+        setLocation("/create-profile");
+      });
+  }, [authLoading, isAuthenticated]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -159,6 +191,17 @@ export default function Upload() {
     setUploadProgress(0);
     setFormData({ youtubeId: "", title: "", description: "", type: "short", originalAudioOnly: true });
   };
+
+  // Show loading while checking auth and profile
+  if (authLoading || profileLoading) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

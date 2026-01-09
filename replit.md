@@ -31,8 +31,16 @@ Preferred communication style: Simple, everyday language.
 - **Schema Location**: `shared/schema.ts` - contains users, videos, upvotes, comments, subscriptions, notifications tables
 - **Migrations**: Drizzle Kit with `db:push` command for schema sync
 
+### Authentication
+- **Provider**: Replit Auth (supports Google, email/password, GitHub, Apple, X)
+- **Flow**: Sign in → Create Profile (if new user) → Access creator features
+- **Tables**: `auth_users` (Replit Auth managed), `users` (cat profiles linked via `authUserId`)
+- **Session**: PostgreSQL-backed session store with `connect-pg-simple`
+- **Middleware**: `isAuthenticated` for protected routes, `getAuthenticatedUserId` helper for profile lookup
+
 ### Key Data Models
-- **Users**: Profile with username, tagline, avatar, wallet balance, total views
+- **Auth Users**: Replit Auth managed (id, email, firstName, lastName, profileImageUrl)
+- **Users**: Cat profiles with username, tagline, avatar, wallet balance, total views (linked to auth_users via authUserId)
 - **Videos**: Supports both regular videos and shorts, tracks processing status (pending → processing → uploaded → approved), stores YouTube ID after upload
 - **Social Features**: Upvotes, comments, subscriptions, notifications
 - **YouTube Video Creators**: Maps YouTube video IDs to creator profiles for multi-creator support
